@@ -7,7 +7,7 @@
 
 export async function apiFetch<T = unknown>(
   path: string,
-  opts: { method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'; body?: unknown } = {}
+  opts: { method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'; body?: unknown } = {}
 ): Promise<T> {
   const res = await fetch(path, {
     method: opts.method ?? 'GET',

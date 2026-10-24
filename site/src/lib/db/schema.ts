@@ -211,6 +211,14 @@ CREATE TABLE IF NOT EXISTS oauth_states (
   created_at INTEGER NOT NULL,
   expires_at INTEGER NOT NULL
 );
+
+/* 站点配置 —— 键值对（第三方登录凭据等运行期可改的密钥） */
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT,
+  updated_by TEXT,
+  updated_at INTEGER NOT NULL
+);
 `;
 
 /** 后台模块定义（权限粒度） */
@@ -223,6 +231,7 @@ export const MODULES = [
   { key: 'sales', label: '节日折扣', labelEn: 'Sale events' },
   { key: 'campaigns', label: '邮件推广', labelEn: 'Campaigns' },
   { key: 'staff', label: '员工管理', labelEn: 'Staff' },
+  { key: 'settings', label: '登录配置', labelEn: 'Sign-in' },
 ] as const;
 
 export type ModuleKey = (typeof MODULES)[number]['key'];
@@ -230,7 +239,7 @@ export type ModuleKey = (typeof MODULES)[number]['key'];
 /** 角色 → 默认权限 */
 export const ROLE_DEFAULTS: Record<string, ModuleKey[]> = {
   super: MODULES.map((m) => m.key),
-  admin: ['dashboard', 'users', 'products', 'orders', 'coupons', 'sales', 'campaigns'],
+  admin: ['dashboard', 'users', 'products', 'orders', 'coupons', 'sales', 'campaigns', 'settings'],
   ops: ['dashboard', 'products', 'orders'],
   support: ['dashboard', 'users', 'orders'],
 };

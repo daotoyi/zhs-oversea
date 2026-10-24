@@ -19,6 +19,7 @@ const ICONS: Record<string, string> = {
   sales: '◑',
   campaigns: '✉',
   staff: '☰',
+  settings: '⚙',
 };
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

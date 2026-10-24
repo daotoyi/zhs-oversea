@@ -47,6 +47,16 @@ function buildLabels(en: boolean, tr: (s: string) => string) {
     noAccount: L('No account yet?', '还没有账户？'),
     haveAccount: L('Already registered?', '已经注册过？'),
     orContinue: L('or continue with', '或使用以下方式'),
+    continueWith: L('Continue with', '用'),
+    notEnabled: L('not enabled', '未开通'),
+    oauthNote: L(
+      'Google and Apple sign-in require the shop owner to finish OAuth setup. Email sign-in works right away.',
+      'Google 与 Apple 登录需店主完成授权配置后启用；邮箱登录现在即可使用。'
+    ),
+    oauthNoteReady: L(
+      'You will be redirected to the provider to authorize, then back here. We never see your password.',
+      '点击后会跳转到对应平台授权，再返回本页。我们不会接触你的密码。'
+    ),
     marketingOptIn: L('Email me new objects and seasonal notes.', '愿意接收新品与节令通信。'),
 
     /* 忘记 / 重设密码 */

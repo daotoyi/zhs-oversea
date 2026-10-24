@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import type { AccountLabels } from '@/lib/account/ui';
 
-type Provider = { key: string; label: string; enabled: boolean };
+type Provider = { key: string; label: string; enabled: boolean; missing?: string[] };
 
 type Mode = 'login' | 'register' | 'forgot';
 
@@ -31,8 +31,7 @@ export function AuthPanel({
   const [error, setError] = useState<string | null>(initialError ?? null);
   const [info, setInfo] = useState<string | null>(null);
 
-  const enabled = providers.filter((p) => p.enabled);
-
+  const anyOff = providers.some((p) => !p.enabled);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -225,19 +224,29 @@ export function AuthPanel({
         )}
       </div>
 
-      {mode !== 'forgot' && enabled.length > 0 && (
+      {mode !== 'forgot' && (
         <div className="acct-oauth">
           <div className="acct-or">
             <span>{labels.orContinue}</span>
           </div>
           <div className="acct-oauth-btns">
-            {enabled.map((p) => (
-              <a key={p.key} className="acct-oauth-btn" href={`/api/auth/oauth/${p.key}?next=${encodeURIComponent(next)}`}>
+            {/* 按钮常驻：让访客看得见支持哪些方式。未配置凭据时点了会回登录页给出明确提示 */}
+            {providers.map((p) => (
+              <a
+                key={p.key}
+                className={`acct-oauth-btn${p.enabled ? '' : ' is-off'}`}
+                href={`/api/auth/oauth/${p.key}?next=${encodeURIComponent(next)}`}
+                aria-disabled={!p.enabled}
+              >
                 {p.key === 'google' ? <GoogleMark /> : <AppleMark />}
-                <span>{p.label}</span>
+                <span>
+                  {labels.continueWith} {p.label}
+                </span>
+                {!p.enabled && <em className="acct-oauth-off">{labels.notEnabled}</em>}
               </a>
             ))}
           </div>
+          <p className="acct-oauth-note">{anyOff ? labels.oauthNote : labels.oauthNoteReady}</p>
         </div>
       )}
     </div>

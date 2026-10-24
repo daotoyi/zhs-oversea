@@ -3160,3 +3160,188 @@ html[lang^='zh'] .eyebrow {
     padding: 20px 16px;
   }
 }
+
+/* ── 第三方登录按钮（常驻显示；未配置凭据时标注未开通）── */
+.acct-oauth-btn.is-off {
+  opacity: 0.72;
+  border-style: dashed;
+}
+
+.acct-oauth-btn.is-off:hover {
+  border-color: var(--rule);
+}
+
+.acct-oauth-off {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ash);
+  border: 1px solid var(--rule);
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+
+.acct-oauth-note {
+  margin-top: 12px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--ash);
+  text-align: center;
+}
+
+/* ── 后台：登录配置页 ── */
+.adm-oauth-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.adm-oauth-card {
+  background: #fff;
+  border: 1px solid var(--rule);
+  padding: 20px 18px;
+}
+
+.adm-oauth-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.adm-oauth-head h2 {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.adm-oauth-state {
+  margin-left: auto;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 1px solid var(--rule);
+  color: var(--ash);
+}
+
+.adm-oauth-state.on {
+  color: #1f6b3b;
+  border-color: #cfe3d6;
+  background: #eef7f1;
+}
+
+.adm-oauth-hint {
+  font-size: 12px;
+  color: var(--ash);
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+.adm-oauth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.adm-oauth-field > span {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--ash);
+}
+
+.adm-oauth-field input,
+.adm-oauth-field textarea {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 13px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.adm-oauth-field textarea {
+  min-height: 96px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.adm-oauth-field input:focus,
+.adm-oauth-field textarea:focus {
+  outline: none;
+  border-color: var(--ink);
+}
+
+.adm-oauth-uri {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 9px 10px;
+  background: #f7f4ed;
+  border: 1px dashed var(--rule);
+  font-size: 11.5px;
+  word-break: break-all;
+}
+
+.adm-oauth-uri code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.adm-oauth-uri button {
+  margin-left: auto;
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: var(--cinnabar);
+  font-size: 11px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.adm-oauth-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.adm-steps {
+  margin: 0 0 18px;
+  padding-left: 18px;
+  font-size: 12.5px;
+  line-height: 1.85;
+  color: var(--ink);
+}
+
+.adm-steps li {
+  margin-bottom: 6px;
+}
+
+.adm-steps code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+  background: #f2ede3;
+  padding: 1px 5px;
+}
+
+.adm-steps-note {
+  font-size: 12px;
+  color: var(--ash);
+  line-height: 1.7;
+  padding: 12px 14px;
+  background: #fdf6ec;
+  border-left: 2px solid #c99a4e;
+}
+
+@media (max-width: 980px) {
+  .adm-oauth-grid {
+    grid-template-columns: 1fr;
+  }
+}

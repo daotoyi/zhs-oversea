@@ -13,11 +13,13 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ provider: s
   if (provider !== 'google' && provider !== 'apple') {
     return NextResponse.redirect(new URL('/account/login?error=unknown_provider', base));
   }
-  if (!isProviderEnabled(provider as ProviderKey)) {
-    return NextResponse.redirect(new URL('/account/login?error=provider_disabled', base));
-  }
 
   await initDb();
+  // 未配置凭据时明确回跳并给出提示，不做半截跳转也不静默失败
+  if (!isProviderEnabled(provider as ProviderKey)) {
+    return NextResponse.redirect(new URL(`/account/login?error=provider_disabled&provider=${provider}`, base));
+  }
+
   const next = safeNext(new URL(req.url).searchParams.get('next'));
   const state = await createState(provider as ProviderKey, next);
   return NextResponse.redirect(authorizeUrl(provider as ProviderKey, state, base));

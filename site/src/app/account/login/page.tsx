@@ -41,7 +41,7 @@ function errorText(code: string | undefined, labels: AccountLabels): string | un
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; error?: string }>;
+  searchParams: Promise<{ next?: string; error?: string; provider?: string }>;
 }) {
   const sp = await searchParams;
   await initDb();
@@ -55,6 +55,15 @@ export default async function LoginPage({
   const navStrings = await getNavStrings();
   const footerStrings = await getFooterStrings();
 
+  // provider_disabled 时把「哪个平台 + 缺什么」讲清楚，别只丢一句听不懂的话
+  let initialError = errorText(sp.error, labels);
+  if (sp.error === 'provider_disabled' && (sp.provider === 'google' || sp.provider === 'apple')) {
+    const name = sp.provider === 'google' ? 'Google' : 'Apple';
+    initialError = locale === 'en'
+      ? `${name} sign-in is not switched on yet. Please use email and password for now.`
+      : `${name} 登录尚未开通，请先用邮箱与密码登录。`;
+  }
+
   return (
     <>
       <Nav strings={navStrings} />
@@ -64,7 +73,7 @@ export default async function LoginPage({
             labels={labels}
             providers={enabledProviders()}
             next={next}
-            initialError={errorText(sp.error, labels)}
+            initialError={initialError}
           />
         </div>
       </section>

@@ -1,19 +1,21 @@
 /**
  * 第三方登录（Google / Apple）—— 原生实现，不引入 next-auth
  *
- * 只有配置了对应环境变量，前台才会出现该按钮；未配置时完全静默，
- * 不影响邮箱密码注册登录。
+ * 凭据来源优先级：后台「登录配置」页（settings 表）> 环境变量。
+ * 两者都没有时，前台按钮仍会显示（让用户看得见有哪些方式），
+ * 但点进会回到登录页并提示「尚未启用」，绝不静默失败。
  *
- *   GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET
- *   APPLE_CLIENT_ID（Services ID）/ APPLE_TEAM_ID / APPLE_KEY_ID / APPLE_PRIVATE_KEY（.p8 内容）
+ *   Google：Client ID + Client Secret
+ *   Apple ：Services ID + Team ID + Key ID + Private Key(.p8)
  *
- * 回调地址（必须在各自控制台登记）：
+ * 回调地址（必须在各自控制台登记，一字不差）：
  *   https://zhenhesheng.com/api/auth/oauth/google/callback
  *   https://zhenhesheng.com/api/auth/oauth/apple/callback
  */
 
 import crypto from 'node:crypto';
 import { SignJWT, importPKCS8 } from 'jose';
+import { resolve } from '@/lib/settings';
 
 export type ProviderKey = 'google' | 'apple';
 
@@ -29,23 +31,64 @@ export type ProviderMeta = {
   key: ProviderKey;
   label: string;
   enabled: boolean;
+  /** 已填写了哪些字段，后台诊断用 */
+  missing: string[];
 };
 
+export type Credentials = {
+  clientId: string | null;
+  clientSecret: string | null;
+  teamId: string | null;
+  keyId: string | null;
+  privateKey: string | null;
+};
+
+export function credentials(key: ProviderKey): Credentials {
+  if (key === 'google') {
+    return {
+      clientId: resolve('oauth_google_client_id', 'GOOGLE_CLIENT_ID'),
+      clientSecret: resolve('oauth_google_client_secret', 'GOOGLE_CLIENT_SECRET'),
+      teamId: null,
+      keyId: null,
+      privateKey: null,
+    };
+  }
+  return {
+    clientId: resolve('oauth_apple_client_id', 'APPLE_CLIENT_ID'),
+    clientSecret: null,
+    teamId: resolve('oauth_apple_team_id', 'APPLE_TEAM_ID'),
+    keyId: resolve('oauth_apple_key_id', 'APPLE_KEY_ID'),
+    privateKey: resolve('oauth_apple_private_key', 'APPLE_PRIVATE_KEY')?.replace(/\\n/g, '\n') ?? null,
+  };
+}
+
+export function missingFields(key: ProviderKey): string[] {
+  const c = credentials(key);
+  if (key === 'google') {
+    const miss: string[] = [];
+    if (!c.clientId) miss.push('Client ID');
+    if (!c.clientSecret) miss.push('Client Secret');
+    return miss;
+  }
+  const miss: string[] = [];
+  if (!c.clientId) miss.push('Services ID');
+  if (!c.teamId) miss.push('Team ID');
+  if (!c.keyId) miss.push('Key ID');
+  if (!c.privateKey) miss.push('Private Key');
+  return miss;
+}
+
 export function isProviderEnabled(key: ProviderKey): boolean {
-  if (key === 'google') return Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
-  return Boolean(
-    process.env.APPLE_CLIENT_ID &&
-      process.env.APPLE_TEAM_ID &&
-      process.env.APPLE_KEY_ID &&
-      process.env.APPLE_PRIVATE_KEY
-  );
+  return missingFields(key).length === 0;
 }
 
 export function enabledProviders(): ProviderMeta[] {
-  return [
-    { key: 'google', label: 'Google', enabled: isProviderEnabled('google') },
-    { key: 'apple', label: 'Apple', enabled: isProviderEnabled('apple') },
-  ];
+  return (['google', 'apple'] as ProviderKey[]).map((key) => ({
+    key,
+    label: key === 'google' ? 'Google' : 'Apple',
+    enabled: isProviderEnabled(key),
+    missing: missingFields(key),
+  }));
 }
 
 export function redirectUri(base: string, key: ProviderKey): string {
@@ -53,10 +96,11 @@ export function redirectUri(base: string, key: ProviderKey): string {
 }
 
 export function authorizeUrl(key: ProviderKey, state: string, base: string): string {
+  const creds = credentials(key);
   const uri = redirectUri(base, key);
   if (key === 'google') {
     const p = new URLSearchParams({
-      client_id: process.env.GOOGLE_CLIENT_ID!,
+      client_id: creds.clientId!,
       redirect_uri: uri,
       response_type: 'code',
       scope: 'openid email profile',
@@ -67,7 +111,7 @@ export function authorizeUrl(key: ProviderKey, state: string, base: string): str
     return `https://accounts.google.com/o/oauth2/v2/auth?${p.toString()}`;
   }
   const p = new URLSearchParams({
-    client_id: process.env.APPLE_CLIENT_ID!,
+    client_id: creds.clientId!,
     redirect_uri: uri,
     response_type: 'code',
     scope: 'name email',
@@ -78,18 +122,53 @@ export function authorizeUrl(key: ProviderKey, state: string, base: string): str
 }
 
 /** Apple 的 client_secret 是 ES256 签名的短时 JWT，最长 6 个月，这里签 5 分钟 */
-async function appleClientSecret(): Promise<string> {
-  const privateKey = (process.env.APPLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
-  const key = await importPKCS8(privateKey, 'ES256');
+async function appleClientSecret(privateKeyOverride?: string): Promise<string> {
+  const creds = credentials('apple');
+  const key = await importPKCS8(privateKeyOverride ?? creds.privateKey!, 'ES256');
   const nowSec = Math.floor(Date.now() / 1000);
   return new SignJWT({})
-    .setProtectedHeader({ alg: 'ES256', kid: process.env.APPLE_KEY_ID! })
-    .setIssuer(process.env.APPLE_TEAM_ID!)
+    .setProtectedHeader({ alg: 'ES256', kid: creds.keyId! })
+    .setIssuer(creds.teamId!)
     .setAudience('https://appleid.apple.com')
-    .setSubject(process.env.APPLE_CLIENT_ID!)
+    .setSubject(creds.clientId!)
     .setIssuedAt(nowSec)
     .setExpirationTime(nowSec + 300)
     .sign(key);
+}
+
+/**
+ * 归一化私钥：Apple 官方 .p8 是 PKCS#8（BEGIN PRIVATE KEY），但用户可能从别处
+ * 拿到 SEC1（BEGIN EC PRIVATE KEY）。jose 的 importPKCS8 只吃 PKCS#8，
+ * 这里统一转换，避免用户对着「must be PKCS#8 formatted string」发懵。
+ */
+export function normalizePrivateKey(raw: string): { key: string } | { error: string } {
+  const key = raw.replace(/\\n/g, '\n').trim();
+  if (!key.includes('BEGIN')) return { error: '看起来不是 PEM 格式的私钥，请粘贴 .p8 文件全文' };
+  try {
+    const obj = crypto.createPrivateKey({ key });
+    const pkcs8 = obj.export({ type: 'pkcs8', format: 'pem' }).toString();
+    return { key: pkcs8 };
+  } catch (err) {
+    return { error: `私钥无法解析：${err instanceof Error ? err.message : String(err)}` };
+  }
+}
+
+/** 校验 Apple .p8 私钥是否可用（后台保存时前置检查，避免线上才发现） */
+export async function validateAppleKey(override?: string): Promise<string | null> {
+  const creds = credentials('apple');
+  const source = override ?? creds.privateKey;
+  if (!source) return '未填写 Private Key';
+  if (!creds.teamId || !creds.keyId || !creds.clientId) return 'Team ID / Key ID / Services ID 未填全';
+
+  const normalized = normalizePrivateKey(source);
+  if ('error' in normalized) return normalized.error;
+
+  try {
+    await appleClientSecret(normalized.key);
+    return null;
+  } catch (err) {
+    return `私钥签名失败：${err instanceof Error ? err.message : String(err)}`;
+  }
 }
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
@@ -102,11 +181,8 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
   }
 }
 
-export async function exchangeCode(
-  key: ProviderKey,
-  code: string,
-  base: string
-): Promise<OAuthProfile | null> {
+export async function exchangeCode(key: ProviderKey, code: string, base: string): Promise<OAuthProfile | null> {
+  const creds = credentials(key);
   const uri = redirectUri(base, key);
 
   if (key === 'google') {
@@ -115,22 +191,25 @@ export async function exchangeCode(
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         code,
-        client_id: process.env.GOOGLE_CLIENT_ID!,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+        client_id: creds.clientId!,
+        client_secret: creds.clientSecret!,
         redirect_uri: uri,
         grant_type: 'authorization_code',
       }),
     });
     if (!res.ok) {
-      console.error('[oauth] google token failed', res.status, (await res.text()).slice(0, 200));
+      console.error('[oauth] google token failed', res.status, (await res.text()).slice(0, 300));
       return null;
     }
-    const data = (await res.json()) as { access_token?: string; id_token?: string };
+    const data = (await res.json()) as { access_token?: string };
     if (!data.access_token) return null;
     const infoRes = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
       headers: { Authorization: `Bearer ${data.access_token}` },
     });
-    if (!infoRes.ok) return null;
+    if (!infoRes.ok) {
+      console.error('[oauth] google userinfo failed', infoRes.status);
+      return null;
+    }
     const info = (await infoRes.json()) as {
       sub?: string;
       email?: string;
@@ -155,14 +234,14 @@ export async function exchangeCode(
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       code,
-      client_id: process.env.APPLE_CLIENT_ID!,
+      client_id: creds.clientId!,
       client_secret: clientSecret,
       redirect_uri: uri,
       grant_type: 'authorization_code',
     }),
   });
   if (!res.ok) {
-    console.error('[oauth] apple token failed', res.status, (await res.text()).slice(0, 200));
+    console.error('[oauth] apple token failed', res.status, (await res.text()).slice(0, 300));
     return null;
   }
   const data = (await res.json()) as { id_token?: string };
@@ -192,7 +271,10 @@ export async function createState(provider: ProviderKey, redirectTo: string | nu
   return state;
 }
 
-export async function consumeState(state: string, provider: ProviderKey): Promise<{ ok: boolean; redirectTo: string | null }> {
+export async function consumeState(
+  state: string,
+  provider: ProviderKey
+): Promise<{ ok: boolean; redirectTo: string | null }> {
   const { get, run, now } = await import('@/lib/db/loader');
   const row = get<{ provider: string; redirect_to: string | null; expires_at: number }>(
     'SELECT provider, redirect_to, expires_at FROM oauth_states WHERE state = ?',
