@@ -29,7 +29,7 @@ type S = {
 
 const STRINGS: Record<Locale, S> = {
   en: {
-    empty: 'Your bag is empty. The collection is a good place to start.',
+    empty: 'Your cart is empty. The collection is a good place to start.',
     browse: 'Browse the objects',
     summary: 'Summary',
     subtotal: 'Subtotal',

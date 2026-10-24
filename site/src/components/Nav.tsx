@@ -47,6 +47,21 @@ export function Nav({ strings }: { strings: NavStrings }) {
             <Link href="/cart" className="cart" aria-label={strings.bag}>
               {strings.bag}
               <span className="bag">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M2.6 3.2h2.1l2.05 9.2h8.55l1.7-6.4H6.3" />
+                  <circle cx="8.1" cy="16" r="1.35" />
+                  <circle cx="14.9" cy="16" r="1.35" />
+                </svg>
                 {count > 0 && <span className="bag-count">{count}</span>}
               </span>
             </Link>

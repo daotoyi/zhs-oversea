@@ -19,7 +19,7 @@ export const UI_ZH = {
     about: '关于',
     search: '搜索',
     contact: '联系',
-    bag: '购物袋',
+    bag: '购物车',
     brandSub: '道家文化 · 生活',
   },
 
@@ -43,7 +43,7 @@ export const UI_ZH = {
     free: '免费',
     from: '起',
     soon: '即将刊出',
-    addToCart: '加入购物袋',
+    addToCart: '加入购物车',
     soldOut: '暂时无货',
     checkout: '结账',
     summary: '订单摘要',
@@ -51,12 +51,12 @@ export const UI_ZH = {
     shipping: '运费',
     estimatedDelivery: '预计送达',
     remove: '移除',
-    emptyBag: '购物袋是空的。器物页是个不错的起点。',
+    emptyBag: '购物车是空的。器物页是个不错的起点。',
     browseObjects: '去看器物',
     awayFromFreeShipping: '再买 {amount} 即可享美国免运费。',
     dutiesAtCheckout: '关税与美国各州销售税将在结账时计算。',
     businessDays: '个工作日',
-    yourBag: '购物袋',
+    yourBag: '购物车',
     search: '搜索',
     contact: '联系',
     account: '账户',
@@ -174,7 +174,7 @@ export const UI_ZH = {
 
   // ── 购物车 ──
   cartPage: {
-    eyebrow: '购物袋',
+    eyebrow: '购物车',
     title: '结账',
     dutyNote: '关税与美国各州销售税在结账时计算。',
     openingCheckout: '正在打开安全结账…',

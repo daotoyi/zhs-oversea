@@ -249,12 +249,21 @@ button {
 }
 
 .bag {
-  width: 19px;
-  height: 19px;
-  border: 1px solid var(--ink);
-  border-radius: 2px;
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  color: var(--ink);
+}
+
+.bag svg {
+  display: block;
+  transition: color 0.2s var(--ease);
+}
+
+.cart:hover .bag svg {
+  color: var(--cinnabar);
 }
 
 .bag-count {

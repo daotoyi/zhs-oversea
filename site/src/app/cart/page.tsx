@@ -8,7 +8,7 @@ import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
 
 export const metadata: Metadata = {
-  title: 'Your bag',
+  title: 'Your cart',
   description: 'Your Zhen He Sheng order.',
   robots: { index: false, follow: false },
 };
@@ -25,7 +25,7 @@ export default async function CartPage() {
       <section className="sec" style={{ paddingTop: 56 }}>
         <div className="wrap">
           <div className="eyebrow" style={{ marginBottom: 16 }}>
-            {t('Your bag', UI_ZH.common.yourBag)}
+            {t('Your cart', UI_ZH.common.yourBag)}
           </div>
           <h1 className="serif" style={{ fontWeight: 300, fontSize: 'clamp(2rem, 4vw, 3rem)', lineHeight: 1.1, marginBottom: 40 }}>
             {t('Order', '结账')}
