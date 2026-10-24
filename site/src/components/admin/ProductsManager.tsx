@@ -1,0 +1,162 @@
+'use client';
+
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { apiFetch } from '@/lib/admin/client';
+
+type Prod = {
+  slug: string;
+  title: string;
+  title_zh: string | null;
+  tagline: string | null;
+  category: string;
+  price_usd: number;
+  compare_at_usd: number | null;
+  images: string;
+  status: string;
+  stock: number;
+};
+
+const CATS = ['books', 'writing-desk', 'incense', 'ritual', 'teaware', 'wearable'];
+const CAT_LABELS: Record<string, string> = {
+  books: '书籍', 'writing-desk': '文房', incense: '香道', ritual: '礼器', teaware: '茶器', wearable: '佩戴',
+};
+const STATUSES = ['active', 'draft', 'archived'];
+
+function usd(cents: number) {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+export default function ProductsManager({ initial }: { initial: Prod[] }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [editing, setEditing] = useState<Prod | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [form, setForm] = useState<Record<string, string>>({});
+  const [msg, setMsg] = useState<{ t: 'ok' | 'err'; m: string } | null>(null);
+
+  function openEdit(p: Prod) {
+    setEditing(p);
+    setCreating(false);
+    setForm({
+      title: p.title, title_zh: p.title_zh ?? '', category: p.category,
+      price: String(p.price_usd / 100), compare_at: p.compare_at_usd ? String(p.compare_at_usd / 100) : '',
+      stock: String(p.stock), status: p.status,
+    });
+    setMsg(null);
+  }
+  function openCreate() {
+    setCreating(true);
+    setEditing(null);
+    setForm({ title: '', title_zh: '', category: 'books', price: '', compare_at: '', stock: '0', status: 'draft' });
+    setMsg(null);
+  }
+
+  function set(k: string, v: string) { setForm((f) => ({ ...f, [k]: v })); }
+
+  async function save() {
+    setMsg(null);
+    const payload: Record<string, unknown> = {
+      title: form.title.trim(),
+      title_zh: form.title_zh.trim() || undefined,
+      category: form.category,
+      price_usd: Math.round((Number(form.price) || 0) * 100),
+      compare_at_usd: form.compare_at ? Math.round(Number(form.compare_at) * 100) : null,
+      stock: Number(form.stock) || 0,
+      status: form.status,
+    };
+    if (editing) {
+      payload.slug = editing.slug;
+      try { await apiFetch('/api/admin/products', { method: 'POST', body: payload }); } catch (e) { setMsg({ t: 'err', m: (e as Error).message }); return; }
+    } else {
+      // 新建：取现有商品镜像图片占位
+      (payload as Record<string, unknown>).images = [];
+      try { await apiFetch('/api/admin/products', { method: 'POST', body: payload }); } catch (e) { setMsg({ t: 'err', m: (e as Error).message }); return; }
+    }
+    setEditing(null); setCreating(false);
+    setMsg({ t: 'ok', m: '已保存' });
+    startTransition(() => router.refresh());
+  }
+
+  async function setStatus(p: Prod, status: string) {
+    await apiFetch('/api/admin/products', { method: 'PATCH', body: { slug: p.slug, status } });
+    startTransition(() => router.refresh());
+  }
+
+  async function remove(p: Prod) {
+    if (!confirm(`确认删除商品「${p.title}」？`)) return;
+    await apiFetch('/api/admin/products', { method: 'PATCH', body: { slug: p.slug, action: 'delete' } });
+    startTransition(() => router.refresh());
+  }
+
+  const showForm = editing || creating;
+
+  return (
+    <>
+      <div className="adm-filters">
+        <span style={{ fontSize: 12.5, color: 'var(--ash)' }}>{initial.length} 个 SKU</span>
+        <button className="adm-btn" onClick={openCreate} disabled={pending}>＋ 新增商品</button>
+        {msg && <span style={{ fontSize: 12.5, color: msg.t === 'ok' ? '#4a5a44' : 'var(--cinnabar)' }}>{msg.m}</span>}
+      </div>
+
+      <div className="adm-card">
+        <table className="adm-table">
+          <thead><tr><th>标题</th><th>品类</th><th className="num">价格</th><th className="num">库存</th><th>状态</th><th className="actions">操作</th></tr></thead>
+          <tbody>
+            {initial.length === 0 && <tr><td colSpan={6}><div className="adm-empty">暂无商品</div></td></tr>}
+            {initial.map((p) => (
+              <tr key={p.slug}>
+                <td><div>{p.title}</div><div style={{ fontSize: 11, color: 'var(--ash)' }}>{p.slug}</div></td>
+                <td>{CAT_LABELS[p.category] ?? p.category}</td>
+                <td className="num">{usd(p.price_usd)}</td>
+                <td className="num">{p.stock}</td>
+                <td>
+                  <select value={p.status} onChange={(e) => setStatus(p, e.target.value)} style={{ fontSize: 12, padding: '4px 8px' }}>
+                    {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </td>
+                <td className="actions">
+                  <button className="adm-btn outline sm" onClick={() => openEdit(p)}>编辑</button>
+                  <button className="adm-btn danger sm" onClick={() => remove(p)}>删除</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {showForm && (
+        <div className="adm-card" style={{ marginTop: 20 }}>
+          <h2>{creating ? '新增商品' : '编辑商品'}</h2>
+          <div className="adm-form">
+            <div className="adm-form-row">
+              <label>标题（英文）<input value={form.title} onChange={(e) => set('title', e.target.value)} /></label>
+              <label>标题（中文）<input value={form.title_zh} onChange={(e) => set('title_zh', e.target.value)} /></label>
+            </div>
+            <div className="adm-form-row">
+              <label>品类
+                <select value={form.category} onChange={(e) => set('category', e.target.value)}>
+                  {CATS.map((c) => <option key={c} value={c}>{CAT_LABELS[c] ?? c}</option>)}
+                </select>
+              </label>
+              <label>状态
+                <select value={form.status} onChange={(e) => set('status', e.target.value)}>
+                  {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </label>
+            </div>
+            <div className="adm-form-row">
+              <label>价格（美元）<input value={form.price} onChange={(e) => set('price', e.target.value)} inputMode="decimal" /></label>
+              <label>划线价（美元，可选）<input value={form.compare_at} onChange={(e) => set('compare_at', e.target.value)} inputMode="decimal" /></label>
+            </div>
+            <label>库存数量<input value={form.stock} onChange={(e) => set('stock', e.target.value)} inputMode="numeric" /></label>
+            <div className="adm-form-actions">
+              <button className="adm-btn" onClick={save} disabled={pending}>保存</button>
+              <button className="adm-btn outline" onClick={() => { setEditing(null); setCreating(false); }}>取消</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

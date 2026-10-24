@@ -99,6 +99,38 @@ export async function recordOrder(session: Stripe.Checkout.Session, eventId: str
   await writeJson(ORDERS_FILE, orders);
   await writeJson(EVENTS_FILE, [...processed, eventId]);
 
+  // 同步写入后台 sql.js 数据库（订单统计 / 客户管理 单一真相来源）
+  try {
+    const { initDb } = await import('@/lib/db/loader');
+    const { createOrder, upsertCustomerFromOrder, findOrderBySession } = await import('@/lib/admin/dao');
+    await initDb();
+    if (!findOrderBySession(session.id)) {
+      createOrder({
+        id: order.orderId,
+        stripe_session_id: order.stripeSessionId,
+        email: order.customerEmail ?? '',
+        customer_name: order.customerName,
+        items: JSON.stringify(order.items),
+        subtotal: order.subtotalUsd,
+        discount: 0,
+        shipping: order.shippingUsd,
+        tax: order.taxUsd,
+        total: order.totalUsd,
+        currency: order.currency,
+        status: 'paid',
+        coupon_code: null,
+        tracking_no: null,
+        address: order.shippingAddress ? JSON.stringify(order.shippingAddress) : null,
+      });
+      if (order.customerEmail) {
+        upsertCustomerFromOrder({ email: order.customerEmail, name: order.customerName, total: order.totalUsd });
+      }
+    }
+  } catch (err) {
+    // 后台 DB 写入失败不影响 Stripe 一侧；记录日志便于排查
+    console.error('[orders] failed to mirror into admin DB:', err instanceof Error ? err.message : err);
+  }
+
   // TODO(Phase 1): 发订单确认邮件 + 同步库存 + 生成拣货单
   console.log(`[orders] recorded ${order.orderId} — ${order.totalUsd / 100} ${order.currency}`);
 

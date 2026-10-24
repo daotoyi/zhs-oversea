@@ -3,6 +3,10 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // sql.js（WASM SQLite）必须作为外部包由 Node 原生 require 加载，
+  // 不能被 webpack 打包：其 UMD 包装会在 module.exports 处崩溃。
+  // standalone 会自动把该包连同 dist/sql-wasm.wasm 一起拷贝进产物。
+  serverExternalPackages: ['sql.js'],
   // 部署用：产出独立可运行的产物，服务器无需 npm install
   output: 'standalone',
   images: {
