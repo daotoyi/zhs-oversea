@@ -28,7 +28,6 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as { items?: LineItem[]; couponCode?: string };
     const items = body.items ?? [];
-
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Empty cart' }, { status: 400 });
     }
@@ -67,6 +66,17 @@ export async function POST(request: Request) {
     }
 
     const stripe = requireStripe();
+
+    // 已登录会员：把订单与账户绑定（未登录则纯游客结算，照旧）
+    let member: { id: string; email: string } | null = null;
+    try {
+      const { currentUser } = await import('@/lib/account/auth');
+      const u = await currentUser();
+      if (u) member = { id: u.id, email: u.email };
+    } catch {
+      member = null;
+    }
+
     const shipping = calculateShipping(
       resolved.map((r) => ({
         product: r.product,
@@ -140,6 +150,9 @@ export async function POST(request: Request) {
         saleDiscountUsd: String(disc.saleDiscount),
         couponDiscountUsd: String(disc.couponDiscount),
         couponCode: disc.couponCode ?? '',
+        // 会员归属：webhook 据此把订单挂到账户并发放积分
+        userId: member?.id ?? '',
+        userEmail: member?.email ?? '',
       },
       success_url: `${SITE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${SITE_URL}/cart?cancelled=1`,

@@ -37,6 +37,7 @@ export async function getNavStrings() {
     ),
     brandSub: t('Dao Culture & Living', UI_ZH.nav.brandSub),
     bag: t('Cart', UI_ZH.nav.bag),
+    account: t('Account', UI_ZH.nav.account),
     search: t('Search', UI_ZH.common.search),
     contact: t('Contact', UI_ZH.common.contact),
     menu: [

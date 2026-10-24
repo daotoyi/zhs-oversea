@@ -20,6 +20,7 @@ export const UI_ZH = {
     search: '搜索',
     contact: '联系',
     bag: '购物车',
+    account: '账户',
     brandSub: '道家文化 · 生活',
   },
 

@@ -135,6 +135,82 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   detail TEXT,
   created_at INTEGER NOT NULL
 );
+
+/* ══════════════════════════════════════════════════
+   前台会员账户（与后台 staff 完全分离）
+   ══════════════════════════════════════════════════ */
+
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  name TEXT,
+  password_hash TEXT,
+  avatar_url TEXT,
+  birthday TEXT,                              -- 'MM-DD'（不存年份，隐私最小化）
+  points INTEGER NOT NULL DEFAULT 0,
+  tier TEXT NOT NULL DEFAULT 'initiate',
+  status TEXT NOT NULL DEFAULT 'active',
+  marketing_opt_in INTEGER NOT NULL DEFAULT 1,
+  email_verified INTEGER NOT NULL DEFAULT 0,
+  birthday_gift_year INTEGER,                 -- 最近一次领取生日礼的年份
+  created_at INTEGER NOT NULL,
+  last_login_at INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS user_identities (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL,
+  provider TEXT NOT NULL,                     -- password | google | apple
+  provider_uid TEXT NOT NULL,
+  email TEXT,
+  created_at INTEGER NOT NULL,
+  UNIQUE(provider, provider_uid)
+);
+
+CREATE TABLE IF NOT EXISTS user_sessions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  user_agent TEXT,
+  ip TEXT,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL,
+  revoked_at INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS favorites (
+  user_id TEXT NOT NULL,
+  slug TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, slug)
+);
+
+CREATE TABLE IF NOT EXISTS points_ledger (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL,
+  delta INTEGER NOT NULL,
+  balance_after INTEGER NOT NULL,
+  reason TEXT NOT NULL,                       -- signup | order_earn | birthday | redeem | refund | admin
+  ref TEXT,
+  note TEXT,
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS user_tokens (
+  id TEXT PRIMARY KEY,                        -- token 的 sha256，不存明文
+  user_id TEXT NOT NULL,
+  kind TEXT NOT NULL,                         -- reset | verify
+  expires_at INTEGER NOT NULL,
+  used_at INTEGER,
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS oauth_states (
+  state TEXT PRIMARY KEY,
+  provider TEXT NOT NULL,
+  redirect_to TEXT,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
+);
 `;
 
 /** 后台模块定义（权限粒度） */

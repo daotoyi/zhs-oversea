@@ -9,6 +9,7 @@ export type NavStrings = {
   bag: string;
   search: string;
   contact: string;
+  account: string;
   topbar: string;
   brandSub: string;
 };
@@ -44,6 +45,23 @@ export function Nav({ strings }: { strings: NavStrings }) {
               {strings.contact}
             </Link>
             <LanguageSwitcher />
+            <Link href="/account" className="nav-account" aria-label={strings.account}>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="10" cy="6.6" r="3.1" />
+                <path d="M4 17c0-2.8 2.7-4.6 6-4.6s6 1.8 6 4.6" />
+              </svg>
+              <span className="hide-sm">{strings.account}</span>
+            </Link>
             <Link href="/cart" className="cart" aria-label={strings.bag}>
               {strings.bag}
               <span className="bag">

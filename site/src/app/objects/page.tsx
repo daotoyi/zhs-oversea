@@ -5,6 +5,9 @@ import { formatUsd } from '@/lib/shipping';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { TrustBar } from '@/components/TrustBar';
+import { FavoriteHeart } from '@/components/account/FavoriteHeart';
+import { accountLabels } from '@/lib/account/ui';
+import { viewerFavoriteSlugs } from '@/lib/account/viewer';
 import { getNavStrings, getFooterStrings, getTrustItems, getUi, localizeProduct } from '@/lib/i18n';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
@@ -67,6 +70,8 @@ export default async function ObjectsPage({
   const navStrings = await getNavStrings();
   const footerStrings = await getFooterStrings();
   const trust = await getTrustItems();
+  const acctLabels = accountLabels(locale);
+  const favSlugs = await viewerFavoriteSlugs();
 
   const all = await Promise.all((await getStoreProducts()).map(localizeProduct));
   const products = category && category !== 'all' ? all.filter((p) => p.category === category) : all;
@@ -121,6 +126,7 @@ export default async function ObjectsPage({
                   {t('from ', '起 ')}
                   {formatUsd(p.priceUsd)}
                 </span>
+                <FavoriteHeart slug={p.slug} initial={favSlugs.has(p.slug)} labels={acctLabels} />
                 {p.cites.status === 'regulated' && <span className="obj-flag">CITES</span>}
                 {p.prop65Warning && <span className="obj-flag prop65">Prop 65</span>}
               </div>

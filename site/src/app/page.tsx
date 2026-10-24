@@ -4,6 +4,9 @@ import { formatUsd } from '@/lib/shipping';
 import { Footer } from '@/components/Footer';
 import { Nav } from '@/components/Nav';
 import { TrustBar } from '@/components/TrustBar';
+import { FavoriteHeart } from '@/components/account/FavoriteHeart';
+import { accountLabels } from '@/lib/account/ui';
+import { viewerFavoriteSlugs } from '@/lib/account/viewer';
 import { getNavStrings, getFooterStrings, getUi, localizeProduct } from '@/lib/i18n';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
@@ -32,6 +35,8 @@ export default async function HomePage() {
   const footerStrings = await getFooterStrings();
   const allProducts = await getStoreProducts();
   const products = await Promise.all(allProducts.slice(0, 6).map(localizeProduct));
+  const acctLabels = accountLabels(locale);
+  const favSlugs = await viewerFavoriteSlugs();
   const h = UI_ZH.home;
 
   const catLabel = (cat: string) =>
@@ -234,6 +239,7 @@ export default async function HomePage() {
                     {t('from ', '起 ')}
                     {formatUsd(p.priceUsd)}
                   </span>
+                  <FavoriteHeart slug={p.slug} initial={favSlugs.has(p.slug)} labels={acctLabels} />
                 </div>
                 <div className="obj-body">
                   <div className="obj-cat">{catLabel(p.category)}</div>

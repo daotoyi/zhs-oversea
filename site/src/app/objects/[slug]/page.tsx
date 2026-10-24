@@ -7,6 +7,10 @@ import { formatUsd } from '@/lib/shipping';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { AddToCart } from '@/components/AddToCart';
+import { FavoriteHeart } from '@/components/account/FavoriteHeart';
+import { currentUser } from '@/lib/account/auth';
+import { isFavorite } from '@/lib/account/dao';
+import { accountLabels } from '@/lib/account/ui';
 import { localizeProduct, getNavStrings, getFooterStrings, getUi } from '@/lib/i18n';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
@@ -56,6 +60,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     .slice(0, 3);
   const h = UI_ZH.pdp;
   const Z = (s: string) => (locale === 'en' ? s : toTraditional(s));
+  const acctLabels = accountLabels(locale);
+  const viewer = await currentUser();
+  const isFav = viewer ? isFavorite(viewer.id, slug) : false;
 
   const addToCartStrings = {
     addToCart: t('Add to cart', UI_ZH.common.addToCart),
@@ -147,6 +154,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <div className="pdp-price">
                 {product.compareAtUsd && <s>{formatUsd(product.compareAtUsd)}</s>}
                 <strong>{formatUsd(product.priceUsd)}</strong>
+                <FavoriteHeart slug={slug} initial={isFav} labels={acctLabels} variant="detail" />
               </div>
 
               <p className="pdp-desc">{product.loc.description}</p>

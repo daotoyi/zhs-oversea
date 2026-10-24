@@ -133,6 +133,18 @@ export async function recordOrder(session: Stripe.Checkout.Session, eventId: str
       if (couponCode && couponDiscountUsd > 0 && order.customerEmail) {
         recordCouponUse(couponCode, order.customerEmail, order.orderId, couponDiscountUsd);
       }
+
+      // 会员归属 + 积分（幂等：同一订单只发一次）
+      const { findUserById, findUserByEmail } = await import('@/lib/account/dao');
+      const { awardOrderPoints } = await import('@/lib/account/points');
+      const { run: dbRun } = await import('@/lib/db/loader');
+      const member =
+        (meta.userId ? findUserById(meta.userId) : null) ??
+        (order.customerEmail ? findUserByEmail(order.customerEmail) : null);
+      if (member) {
+        dbRun('UPDATE orders SET user_id = ? WHERE id = ?', [member.id, order.orderId]);
+        awardOrderPoints({ userId: member.id, orderId: order.orderId, totalCents: order.totalUsd });
+      }
     }
   } catch (err) {
     // 后台 DB 写入失败不影响 Stripe 一侧；记录日志便于排查
