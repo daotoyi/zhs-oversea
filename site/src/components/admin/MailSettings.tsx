@@ -16,6 +16,7 @@ type Status = {
   physicalAddress: string;
   companyName: string;
   missing: string[];
+  webhookSecretSet: boolean;
   suppressions: Supp[];
   suppressionsTotal: number;
 };
@@ -31,6 +32,7 @@ export default function MailSettings({ initial }: { initial: Status }) {
   const [replyTo, setReplyTo] = useState(initial.replyTo);
   const [addr, setAddr] = useState(initial.physicalAddress);
   const [company, setCompany] = useState(initial.companyName);
+  const [webhookSecret, setWebhookSecret] = useState('');
 
   const [testTo, setTestTo] = useState('');
   const [testKind, setTestKind] = useState<'transactional' | 'marketing'>('transactional');
@@ -50,9 +52,11 @@ export default function MailSettings({ initial }: { initial: Status }) {
           replyTo,
           physicalAddress: addr,
           companyName: company,
+          webhookSecret,
         },
       });
       setResendKey('');
+      setWebhookSecret('');
       setMsg({ t: 'ok', m: '已保存（留空的字段保持原值）' });
       router.refresh();
     } catch (e) {
@@ -178,6 +182,46 @@ export default function MailSettings({ initial }: { initial: Status }) {
             <button className="btn btn-solid" type="button" disabled={busy === 'save'} onClick={save}>
               {busy === 'save' ? '保存中…' : '保存邮件配置'}
             </button>
+          </div>
+
+          <hr className="rule" style={{ margin: '20px 0 14px' }} />
+
+          <h2 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>退信自动处理</h2>
+          <p className="adm-oauth-hint">
+            硬退信与「举报垃圾邮件」会<strong>自动</strong>加入退订名单，不用人工盯。这是保住域名声誉的关键——
+            把信反复投给不存在的邮箱，Gmail 会把整域判为垃圾源，连密码重置都进不了收件箱。
+          </p>
+          <div className="adm-oauth-uri">
+            <span>Resend 后台填这个端点</span>
+            <code>https://zhenhesheng.com/api/webhooks/resend</code>
+            <button
+              type="button"
+              onClick={() => navigator.clipboard?.writeText('https://zhenhesheng.com/api/webhooks/resend')}
+            >
+              复制
+            </button>
+          </div>
+          <p className="adm-oauth-hint">
+            事件勾选：<code>email.bounced</code>、<code>email.complained</code>（可选 <code>email.delivered</code>）。
+          </p>
+          <label className="adm-oauth-field">
+            <span>
+              Webhook 签名密钥 {initial.webhookSecretSet && <em>(已配置)</em>}
+            </span>
+            <input
+              value={webhookSecret}
+              onChange={(e) => setWebhookSecret(e.target.value)}
+              placeholder={initial.webhookSecretSet ? '留空 = 不修改' : 'whsec_…（Resend 建 webhook 后给出）'}
+              autoComplete="off"
+            />
+          </label>
+          <div className="adm-oauth-foot">
+            <button className="btn btn-outline" type="button" disabled={busy === 'save'} onClick={save}>
+              保存密钥
+            </button>
+            <span className={`adm-mail-badge${initial.webhookSecretSet ? ' ok' : ''}`}>
+              {initial.webhookSecretSet ? '已启用' : '未启用'}
+            </span>
           </div>
 
           <hr className="rule" style={{ margin: '20px 0 14px' }} />

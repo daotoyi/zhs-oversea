@@ -16,6 +16,7 @@ const KEYS: Record<string, string> = {
   replyTo: 'mail_reply_to',
   physicalAddress: 'mail_physical_address',
   companyName: 'mail_company_name',
+  webhookSecret: 'mail_webhook_secret',
 };
 
 /** 保存邮件配置（留空 = 保持原值；显式 clear 才删除） */

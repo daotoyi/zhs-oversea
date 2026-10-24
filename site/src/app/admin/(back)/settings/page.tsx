@@ -60,6 +60,7 @@ export default async function SettingsPage() {
           physicalAddress: mail.physicalAddress,
           companyName: mail.companyName,
           missing: missingMailConfig(),
+          webhookSecretSet: Boolean(stored.mail_webhook_secret),
           suppressions: listSuppressions(200),
           suppressionsTotal: suppressionCount(),
         }}
