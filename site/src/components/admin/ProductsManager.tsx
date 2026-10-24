@@ -9,6 +9,7 @@ type Prod = {
   title: string;
   title_zh: string | null;
   tagline: string | null;
+  description: string | null;
   category: string;
   price_usd: number;
   compare_at_usd: number | null;
@@ -17,9 +18,16 @@ type Prod = {
   stock: number;
 };
 
-const CATS = ['books', 'writing-desk', 'incense', 'ritual', 'teaware', 'wearable'];
+// 必须与 lib/types.ts 的 ProductCategory 完全一致，否则存进去的品类
+// 前台筛选（/objects?category=...）匹配不到，商品会从对应分类消失。
+const CATS = ['books', 'writing-desk', 'tea-ware', 'incense-ritual', 'talisman-objects', 'home-altar'];
 const CAT_LABELS: Record<string, string> = {
-  books: '书籍', 'writing-desk': '文房', incense: '香道', ritual: '礼器', teaware: '茶器', wearable: '佩戴',
+  books: '书籍',
+  'writing-desk': '文房',
+  'tea-ware': '茶器',
+  'incense-ritual': '香道',
+  'talisman-objects': '开运饰品',
+  'home-altar': '风水摆件',
 };
 const STATUSES = ['active', 'draft', 'archived'];
 
@@ -38,8 +46,12 @@ export default function ProductsManager({ initial }: { initial: Prod[] }) {
   function openEdit(p: Prod) {
     setEditing(p);
     setCreating(false);
+    let imgs: string[] = [];
+    try { imgs = JSON.parse(p.images || '[]'); } catch { imgs = []; }
     setForm({
       title: p.title, title_zh: p.title_zh ?? '', category: p.category,
+      tagline: p.tagline ?? '', description: p.description ?? '',
+      images: imgs.join('\n'),
       price: String(p.price_usd / 100), compare_at: p.compare_at_usd ? String(p.compare_at_usd / 100) : '',
       stock: String(p.stock), status: p.status,
     });
@@ -48,7 +60,10 @@ export default function ProductsManager({ initial }: { initial: Prod[] }) {
   function openCreate() {
     setCreating(true);
     setEditing(null);
-    setForm({ title: '', title_zh: '', category: 'books', price: '', compare_at: '', stock: '0', status: 'draft' });
+    setForm({
+      title: '', title_zh: '', category: 'books', tagline: '', description: '', images: '',
+      price: '', compare_at: '', stock: '0', status: 'draft',
+    });
     setMsg(null);
   }
 
@@ -56,22 +71,28 @@ export default function ProductsManager({ initial }: { initial: Prod[] }) {
 
   async function save() {
     setMsg(null);
+    const imageList = (form.images ?? '')
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean);
     const payload: Record<string, unknown> = {
       title: form.title.trim(),
-      title_zh: form.title_zh.trim() || undefined,
+      title_zh: form.title_zh.trim() || null,
       category: form.category,
+      tagline: form.tagline?.trim() || null,
+      description: form.description?.trim() || null,
+      images: imageList,
       price_usd: Math.round((Number(form.price) || 0) * 100),
       compare_at_usd: form.compare_at ? Math.round(Number(form.compare_at) * 100) : null,
       stock: Number(form.stock) || 0,
       status: form.status,
     };
-    if (editing) {
-      payload.slug = editing.slug;
-      try { await apiFetch('/api/admin/products', { method: 'POST', body: payload }); } catch (e) { setMsg({ t: 'err', m: (e as Error).message }); return; }
-    } else {
-      // 新建：取现有商品镜像图片占位
-      (payload as Record<string, unknown>).images = [];
-      try { await apiFetch('/api/admin/products', { method: 'POST', body: payload }); } catch (e) { setMsg({ t: 'err', m: (e as Error).message }); return; }
+    if (editing) payload.slug = editing.slug;
+    try {
+      await apiFetch('/api/admin/products', { method: 'POST', body: payload });
+    } catch (e) {
+      setMsg({ t: 'err', m: (e as Error).message });
+      return;
     }
     setEditing(null); setCreating(false);
     setMsg({ t: 'ok', m: '已保存' });
@@ -150,6 +171,9 @@ export default function ProductsManager({ initial }: { initial: Prod[] }) {
               <label>划线价（美元，可选）<input value={form.compare_at} onChange={(e) => set('compare_at', e.target.value)} inputMode="decimal" /></label>
             </div>
             <label>库存数量<input value={form.stock} onChange={(e) => set('stock', e.target.value)} inputMode="numeric" /></label>
+            <label>卖点一句话（前台卡片副标题）<input value={form.tagline} onChange={(e) => set('tagline', e.target.value)} /></label>
+            <label>详情描述（前台商品页正文）<textarea rows={4} value={form.description} onChange={(e) => set('description', e.target.value)} /></label>
+            <label>图片路径（每行一个，如 /products/xxx.jpg）<textarea rows={3} value={form.images} onChange={(e) => set('images', e.target.value)} /></label>
             <div className="adm-form-actions">
               <button className="adm-btn" onClick={save} disabled={pending}>保存</button>
               <button className="adm-btn outline" onClick={() => { setEditing(null); setCreating(false); }}>取消</button>

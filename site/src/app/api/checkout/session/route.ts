@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { requireStripe, SITE_URL } from '@/lib/stripe';
 import { calculateShipping } from '@/lib/shipping';
-import { getProduct } from '@/lib/products';
+import { getStoreProduct } from '@/lib/storefront';
+import { computeDiscount } from '@/lib/discount';
 
 export const runtime = 'nodejs';
 
@@ -9,10 +10,12 @@ export const runtime = 'nodejs';
  * 创建 Stripe Checkout Session（实物文创）
  *
  * 关键点：
- * 1. 价格一律以 USD 从服务端商品数据取，绝不信任客户端传来的金额
- * 2. shipping_options 传入运费档位，满 $60 用一个 0 元档实现免运
- * 3. automatic_tax 开启 Stripe Tax，美国各州销售税自动计算
- * 4. consent_collection 收集电商数据披露同意（FTC 要求）
+ * 1. 价格一律以 USD 从数据库商品取（后台编辑实时生效），绝不信任客户端金额
+ * 2. 优惠券 + 节日折扣在结账时校验并分摊到各行单价
+ * 3. shipping_options 传入运费档位，满 $60 用一个 0 元档实现免运
+ * 4. automatic_tax 开启 Stripe Tax，美国各州销售税自动计算
+ * 5. consent_collection 收集电商数据披露同意（FTC 要求）
+ * 6. 折扣金额与优惠码写入 session metadata，供 webhook 落库订单 + 记优惠券使用
  */
 
 type LineItem = {
@@ -23,7 +26,7 @@ type LineItem = {
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as { items?: LineItem[] };
+    const body = (await request.json()) as { items?: LineItem[]; couponCode?: string };
     const items = body.items ?? [];
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -33,8 +36,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Too many line items' }, { status: 400 });
     }
 
-    const resolved = items.map((item) => {
-      const product = getProduct(item.slug);
+    // 以数据库商品为准取价格/品类/库存，并应用折扣
+    const resolved = [];
+    const discountLines = [];
+    for (const item of items) {
+      const product = await getStoreProduct(item.slug);
       if (!product) {
         throw new Error(`Unknown product: ${item.slug}`);
       }
@@ -42,11 +48,23 @@ export async function POST(request: Request) {
       if (!variant) {
         throw new Error(`Unknown variant: ${item.slug}/${item.variantId}`);
       }
-      if (variant.stock < item.quantity) {
+      const quantity = Math.max(1, item.quantity | 0);
+      if (variant.stock < quantity) {
         throw new Error(`Insufficient stock: ${item.slug}`);
       }
-      return { product, variant, quantity: item.quantity };
-    });
+      resolved.push({ product, variant, quantity });
+      discountLines.push({
+        slug: product.slug,
+        category: product.category,
+        variantPriceUsd: variant.priceUsd,
+        quantity,
+      });
+    }
+
+    const disc = await computeDiscount(discountLines, body.couponCode);
+    if (disc.error) {
+      return NextResponse.json({ error: disc.error }, { status: 400 });
+    }
 
     const stripe = requireStripe();
     const shipping = calculateShipping(
@@ -78,11 +96,11 @@ export async function POST(request: Request) {
           message: 'Free US shipping on orders over $60.',
         },
       },
-      line_items: resolved.map(({ product, variant, quantity }) => ({
+      line_items: resolved.map(({ product, variant, quantity }, i) => ({
         quantity,
         price_data: {
           currency: 'usd',
-          unit_amount: variant.priceUsd,
+          unit_amount: Math.max(1, disc.lineUnitAmounts[i]),
           product_data: {
             name: product.title,
             description: product.titleZh,
@@ -118,6 +136,10 @@ export async function POST(request: Request) {
         source: 'zhenhesheng-com',
         shippingRateId: shipping.rateId,
         freeShipping: String(shipping.free),
+        discountUsd: String(disc.totalDiscount),
+        saleDiscountUsd: String(disc.saleDiscount),
+        couponDiscountUsd: String(disc.couponDiscount),
+        couponCode: disc.couponCode ?? '',
       },
       success_url: `${SITE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${SITE_URL}/cart?cancelled=1`,

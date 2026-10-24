@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { getProducts } from '@/lib/products';
+import { getStoreProducts } from '@/lib/storefront';
 import { formatUsd } from '@/lib/shipping';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
@@ -68,7 +68,7 @@ export default async function ObjectsPage({
   const footerStrings = await getFooterStrings();
   const trust = await getTrustItems();
 
-  const all = await Promise.all(getProducts().map(localizeProduct));
+  const all = await Promise.all((await getStoreProducts()).map(localizeProduct));
   const products = category && category !== 'all' ? all.filter((p) => p.category === category) : all;
   const filters = locale === 'en' ? FILTERS_EN : FILTERS_ZH.map((f) => ({ ...f, label: toTraditional(f.label) }));
   const catLabel = (cat: string) =>

@@ -102,9 +102,13 @@ export async function recordOrder(session: Stripe.Checkout.Session, eventId: str
   // 同步写入后台 sql.js 数据库（订单统计 / 客户管理 单一真相来源）
   try {
     const { initDb } = await import('@/lib/db/loader');
-    const { createOrder, upsertCustomerFromOrder, findOrderBySession } = await import('@/lib/admin/dao');
+    const { createOrder, upsertCustomerFromOrder, findOrderBySession, recordCouponUse } = await import('@/lib/admin/dao');
     await initDb();
     if (!findOrderBySession(session.id)) {
+      const meta = (session.metadata ?? {}) as Record<string, string>;
+      const discountUsd = Number(meta.discountUsd ?? 0) || 0;
+      const couponCode = meta.couponCode || null;
+      const couponDiscountUsd = Number(meta.couponDiscountUsd ?? 0) || 0;
       createOrder({
         id: order.orderId,
         stripe_session_id: order.stripeSessionId,
@@ -112,18 +116,22 @@ export async function recordOrder(session: Stripe.Checkout.Session, eventId: str
         customer_name: order.customerName,
         items: JSON.stringify(order.items),
         subtotal: order.subtotalUsd,
-        discount: 0,
+        discount: discountUsd,
         shipping: order.shippingUsd,
         tax: order.taxUsd,
         total: order.totalUsd,
         currency: order.currency,
         status: 'paid',
-        coupon_code: null,
+        coupon_code: couponCode,
         tracking_no: null,
         address: order.shippingAddress ? JSON.stringify(order.shippingAddress) : null,
       });
       if (order.customerEmail) {
         upsertCustomerFromOrder({ email: order.customerEmail, name: order.customerName, total: order.totalUsd });
+      }
+      // 优惠券使用次数仅在真实付款后累加（避免占用未支付购物车）
+      if (couponCode && couponDiscountUsd > 0 && order.customerEmail) {
+        recordCouponUse(couponCode, order.customerEmail, order.orderId, couponDiscountUsd);
       }
     }
   } catch (err) {

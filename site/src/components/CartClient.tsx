@@ -6,6 +6,7 @@ import { useCart } from '@/lib/cart';
 import { getProduct } from '@/lib/products';
 import { formatUsd } from '@/lib/shipping';
 import type { Locale } from '@/lib/i18n/config';
+import type { StoreProductLite } from '@/lib/storefront';
 import { toTraditional } from '@/lib/i18n/convert';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 
@@ -25,6 +26,11 @@ type S = {
   opening: string;
   light: string;
   heavy: string;
+  coupon: string;
+  apply: string;
+  couponPlaceholder: string;
+  couponApplied: (amount: string) => string;
+  couponInvalid: string;
 };
 
 const STRINGS: Record<Locale, S> = {
@@ -42,6 +48,11 @@ const STRINGS: Record<Locale, S> = {
     opening: 'Opening secure checkout…',
     light: '7–12 business days',
     heavy: '10–18 business days',
+    coupon: 'Coupon',
+    apply: 'Apply',
+    couponPlaceholder: 'Enter coupon code',
+    couponApplied: (a) => `Coupon applied — you save ${a}.`,
+    couponInvalid: 'This code is invalid or not applicable.',
   },
   'zh-Hans': {
     empty: C.emptyBag,
@@ -57,6 +68,11 @@ const STRINGS: Record<Locale, S> = {
     opening: UI_ZH.cartPage.openingCheckout,
     light: '7–12 个工作日',
     heavy: '10–18 个工作日',
+    coupon: '优惠券',
+    apply: '应用',
+    couponPlaceholder: '输入优惠码',
+    couponApplied: (a: string) => `已应用优惠券，立减 ${a}。`,
+    couponInvalid: '优惠码无效或不可用。',
   },
   'zh-Hant': {} as S,
 };
@@ -67,18 +83,41 @@ STRINGS['zh-Hant'] = Object.fromEntries(
   ])
 ) as S;
 
-export function CartClient({ locale }: { locale: Locale }) {
+export function CartClient({
+  locale,
+  productMap,
+}: {
+  locale: Locale;
+  productMap?: Record<string, StoreProductLite>;
+}) {
   const lines = useCart((s) => s.lines);
   const setQuantity = useCart((s) => s.setQuantity);
   const removeLine = useCart((s) => s.removeLine);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [coupon, setCoupon] = useState('');
+  const [couponMsg, setCouponMsg] = useState<string | null>(null);
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponAppliedCode, setCouponAppliedCode] = useState<string | null>(null);
   const s = STRINGS[locale];
 
   const resolved = lines
     .map((line) => {
-      const product = getProduct(line.slug);
-      if (!product) return null;
+      const base = getProduct(line.slug);
+      if (!base) return null;
+      const override = productMap?.[line.slug];
+      const product = override
+        ? {
+            ...base,
+            priceUsd: override.priceUsd,
+            title: override.title,
+            titleZh: override.titleZh,
+            images: override.images,
+            variants: base.variants.map((v, i) =>
+              i === 0 ? { ...v, priceUsd: override.priceUsd, stock: override.stock } : v
+            ),
+          }
+        : base;
       const variant = product.variants.find((v) => v.id === line.variantId);
       if (!variant) return null;
       return { line, product, variant };
@@ -90,6 +129,34 @@ export function CartClient({ locale }: { locale: Locale }) {
   const shipping = subtotal >= 6000 ? 0 : 1200;
   const remaining = Math.max(0, 6000 - subtotal);
 
+  async function applyCoupon() {
+    setCouponMsg(null);
+    setCouponDiscount(0);
+    setCouponAppliedCode(null);
+    const code = coupon.trim();
+    if (!code) return;
+    try {
+      const res = await fetch('/api/coupon/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: lines.map((l) => ({ slug: l.slug, variantId: l.variantId, quantity: l.quantity })),
+          couponCode: code,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.valid) {
+        setCouponMsg(s.couponInvalid);
+        return;
+      }
+      setCouponDiscount(data.discountUsd ?? 0);
+      setCouponAppliedCode(data.code ?? code);
+      setCouponMsg(s.couponApplied(formatUsd(data.discountUsd ?? 0)));
+    } catch {
+      setCouponMsg(s.couponInvalid);
+    }
+  }
+
   async function checkout() {
     setBusy(true);
     setError(null);
@@ -99,6 +166,7 @@ export function CartClient({ locale }: { locale: Locale }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items: lines.map((l) => ({ slug: l.slug, variantId: l.variantId, quantity: l.quantity })),
+          couponCode: couponAppliedCode ?? undefined,
         }),
       });
       const data = await res.json();
@@ -155,11 +223,32 @@ export function CartClient({ locale }: { locale: Locale }) {
 
       <aside className="cart-summary">
         <h2 className="serif">{s.summary}</h2>
+
+        <div className="cart-coupon">
+          <input
+            type="text"
+            placeholder={s.couponPlaceholder}
+            value={coupon}
+            onChange={(e) => setCoupon(e.target.value)}
+            aria-label={s.coupon}
+          />
+          <button className="btn btn-outline" onClick={applyCoupon} type="button">
+            {s.apply}
+          </button>
+        </div>
+        {couponMsg && <div className={couponAppliedCode ? 'cart-coupon-ok' : 'cart-error'}>{couponMsg}</div>}
+
         <dl>
           <div>
             <dt>{s.subtotal}</dt>
             <dd>{formatUsd(subtotal)}</dd>
           </div>
+          {couponDiscount > 0 && (
+            <div>
+              <dt>{s.coupon}</dt>
+              <dd className="cart-discount">−{formatUsd(couponDiscount)}</dd>
+            </div>
+          )}
           <div>
             <dt>{s.shipping}</dt>
             <dd>{shipping === 0 ? C.free : formatUsd(shipping)}</dd>

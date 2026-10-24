@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { getNavStrings, getFooterStrings, getUi, localizeProduct } from '@/lib/i18n';
-import { getProducts } from '@/lib/products';
+import { getStoreProducts } from '@/lib/storefront';
 import { formatUsd } from '@/lib/shipping';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
@@ -37,7 +37,7 @@ export default async function PracticePage() {
   const { locale, t } = await getUi();
   const navStrings = await getNavStrings();
   const footerStrings = await getFooterStrings();
-  const objects = await Promise.all(getProducts().slice(0, 3).map(localizeProduct));
+  const objects = await Promise.all((await getStoreProducts()).slice(0, 3).map(localizeProduct));
   const h = UI_ZH.practicePage;
   const Z = (s: string) => (locale === 'en' ? s : toTraditional(s));
 

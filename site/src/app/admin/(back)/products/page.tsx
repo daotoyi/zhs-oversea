@@ -14,7 +14,7 @@ export default async function ProductsPage() {
       <div className="adm-page-head">
         <div>
           <h1>商品管理</h1>
-          <p>编辑、上架 / 下架 · 镜像自静态商品目录</p>
+          <p>编辑价格 / 标题 / 描述 / 图片 · 保存后前台实时生效</p>
         </div>
       </div>
       <ProductsManager initial={products as never} />

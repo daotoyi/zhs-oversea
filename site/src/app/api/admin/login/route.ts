@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { ADMIN_COOKIE, COOKIE_OPTIONS, signToken } from '@/lib/admin/auth';
 import { authenticate, ensureSuperAdmin } from '@/lib/admin/dao';
 import { initDb } from '@/lib/db/loader';
+import { publicRedirect } from '@/lib/admin/http';
 
 export async function POST(req: NextRequest) {
   await initDb();
@@ -13,15 +14,15 @@ export async function POST(req: NextRequest) {
   const password = String(form?.get('password') ?? '');
 
   if (!username || !password) {
-    return NextResponse.redirect(new URL('/admin/login?e=1', req.url), 303);
+    return publicRedirect(req, '/admin/login?e=1');
   }
 
   const session = authenticate(username, password);
   if (!session) {
-    return NextResponse.redirect(new URL('/admin/login?e=2', req.url), 303);
+    return publicRedirect(req, '/admin/login?e=2');
   }
 
   const store = await cookies();
   store.set(ADMIN_COOKIE, signToken(session), COOKIE_OPTIONS);
-  return NextResponse.redirect(new URL('/admin', req.url), 303);
+  return publicRedirect(req, '/admin');
 }

@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getProduct, getRelatedProducts } from '@/lib/products';
+import { getProduct } from '@/lib/products';
+import { getStoreProduct, getStoreProducts } from '@/lib/storefront';
 import { formatUsd } from '@/lib/shipping';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
@@ -14,6 +15,9 @@ export async function generateStaticParams() {
   const { getProducts } = await import('@/lib/products');
   return getProducts().map((p) => ({ slug: p.slug }));
 }
+
+// 商品详情读数据库（后台编辑实时反映），改为按需渲染，避免构建期触碰 wasm
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({
   params,
@@ -44,10 +48,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const navStrings = await getNavStrings();
   const footerStrings = await getFooterStrings();
 
-  const base = getProduct(slug);
+  const base = await getStoreProduct(slug);
   if (!base) notFound();
   const product = await localizeProduct(base);
-  const related = getRelatedProducts(base);
+  const related = (await getStoreProducts())
+    .filter((p) => p.slug !== slug && p.category === base.category)
+    .slice(0, 3);
   const h = UI_ZH.pdp;
   const Z = (s: string) => (locale === 'en' ? s : toTraditional(s));
 

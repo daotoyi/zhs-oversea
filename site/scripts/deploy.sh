@@ -51,6 +51,18 @@ fi
 # pm2 配置必须随包上传，否则重启会回落到默认 3000 端口
 cp "$SITE/ecosystem.config.js" "$STAGE/ecosystem.config.js"
 
+# 关键：sql.js 的 wasm 二进制不会被 standalone tracer 自动带过来
+# （以运行时字符串引用，未被 import 追踪）。必须手动拷到 cwd 与
+# node_modules/sql.js/dist，否则运行期 open 'sql-wasm.wasm' ENOENT → 登录 500。
+WASM_SRC="$SITE/node_modules/sql.js/dist/sql-wasm.wasm"
+if [ -f "$WASM_SRC" ]; then
+  cp "$WASM_SRC" "$STAGE/sql-wasm.wasm"
+  mkdir -p "$STAGE/node_modules/sql.js/dist"
+  cp "$WASM_SRC" "$STAGE/node_modules/sql.js/dist/sql-wasm.wasm"
+else
+  echo "   ⚠ 未找到 sql-wasm.wasm，登录将 500"
+fi
+
 echo "→ 打包"
 tar -czf "$TARBALL" -C "$STAGE" .
 echo "   $(du -h "$TARBALL" | cut -f1)"
@@ -67,8 +79,10 @@ ssh -o StrictHostKeyChecking=no "$USER@$HOST" \
 
 echo "→ 解压并重启"
 ssh -o StrictHostKeyChecking=no "$USER@$HOST" \
-  "rm -rf $APP_DIR/* $APP_DIR/.[!.]* 2>/dev/null || true; \
+  "if [ -d $APP_DIR/.data ]; then mv $APP_DIR/.data /tmp/zhs-data-keep-$STAMP; fi; \
+   rm -rf $APP_DIR/* $APP_DIR/.[!.]* 2>/dev/null || true; \
    tar -xzf /tmp/site.tar.gz -C $APP_DIR; \
+   if [ -d /tmp/zhs-data-keep-$STAMP ]; then mv /tmp/zhs-data-keep-$STAMP $APP_DIR/.data; fi; \
    chown -R www:www $APP_DIR; \
    cd $APP_DIR && pm2 delete $PM2_NAME >/dev/null 2>&1 || true; \
    pm2 start ecosystem.config.js && pm2 save"

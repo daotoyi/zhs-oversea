@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getProducts } from '@/lib/products';
+import { getStoreProducts } from '@/lib/storefront';
 import { formatUsd } from '@/lib/shipping';
 import { Footer } from '@/components/Footer';
 import { Nav } from '@/components/Nav';
@@ -30,7 +30,8 @@ export default async function HomePage() {
   const { locale, t } = await getUi();
   const navStrings = await getNavStrings();
   const footerStrings = await getFooterStrings();
-  const products = await Promise.all(getProducts().slice(0, 6).map(localizeProduct));
+  const allProducts = await getStoreProducts();
+  const products = await Promise.all(allProducts.slice(0, 6).map(localizeProduct));
   const h = UI_ZH.home;
 
   const catLabel = (cat: string) =>
@@ -218,7 +219,7 @@ export default async function HomePage() {
               )}</p>
               <div style={{ marginTop: 18 }}>
                 <Link className="link-more" href="/objects">
-                  {t(`View all ${getProducts().length} objects →`, '查看全部器物 →')}
+                  {t(`View all ${allProducts.length} objects →`, '查看全部器物 →')}
                 </Link>
               </div>
             </div>

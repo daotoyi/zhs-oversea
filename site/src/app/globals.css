@@ -1543,6 +1543,42 @@ button {
   line-height: 1.5;
 }
 
+.cart-coupon {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.cart-coupon input {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 7px;
+  font-size: 14px;
+  background: #fff;
+  color: var(--ink);
+}
+.cart-coupon input:focus {
+  outline: none;
+  border-color: var(--ink);
+}
+.cart-coupon .btn-outline {
+  white-space: nowrap;
+  padding: 0 18px;
+}
+.cart-coupon-ok {
+  font-size: 12.5px;
+  color: #1f6b3b;
+  background: #e8f3ec;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+.cart-discount {
+  color: var(--cinnabar);
+  font-weight: 500;
+}
+
 /* ── 溯源标准页 ── */
 .std-grid {
   display: grid;

@@ -4,6 +4,7 @@ import { Footer } from '@/components/Footer';
 import { CartClient } from '@/components/CartClient';
 import { getNavStrings, getFooterStrings, getUi } from '@/lib/i18n';
 import { getLocale } from '@/lib/i18n/server';
+import { getStoreProductMap } from '@/lib/storefront';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
 
@@ -21,6 +22,7 @@ export default async function CartPage() {
   const navStrings = await getNavStrings();
   const footerStrings = await getFooterStrings();
   const locale = await getLocale();
+  const productMap = await getStoreProductMap();
 
   return (
     <>
@@ -33,7 +35,7 @@ export default async function CartPage() {
           <h1 className="serif" style={{ fontWeight: 300, fontSize: 'clamp(2rem, 4vw, 3rem)', lineHeight: 1.1, marginBottom: 40 }}>
             {t('Order', '结账')}
           </h1>
-          <CartClient locale={locale} />
+          <CartClient locale={locale} productMap={productMap} />
         </div>
       </section>
       <Footer strings={footerStrings} />
