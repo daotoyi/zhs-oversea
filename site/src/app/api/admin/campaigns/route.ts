@@ -37,12 +37,32 @@ export async function POST(req: Request) {
     if (!campaign) return bad('活动不存在');
     if (campaign.status === 'sending') return bad('该活动正在发送中');
 
+    const { mailStatus } = await import('@/lib/admin/mailer');
+    const { sendMarketing } = await import('@/lib/mail/send');
+    const { sleep } = await import('@/lib/mail/resend');
+    const { isSuppressed } = await import('@/lib/mail/suppression');
+    const { mailConfig } = await import('@/lib/mail/config');
+    const cfg = mailConfig();
+
+    const status = mailStatus();
+    if (!status.marketingReady) {
+      return bad(
+        `营销邮件通道未就绪，缺少：${[
+          !cfg.resendKey && 'Resend API Key',
+          !cfg.fromMarketing && '营销 From',
+          !cfg.physicalAddress && '物理地址',
+        ]
+          .filter(Boolean)
+          .join('、')}（后台「登录配置 → 邮件」）`
+      );
+    }
+
     updateCampaignStatus(id, 'sending');
     persistSoon();
 
     // 收件人：全部客户或按标签筛选
     const tags: string[] = JSON.parse(campaign.target_tags || '[]');
-    const recipients = listCustomers().filter((c) => {
+    const all = listCustomers().filter((c) => {
       if (!tags.length) return true;
       try {
         const own: string[] = JSON.parse(c.tags || '[]');
@@ -52,33 +72,52 @@ export async function POST(req: Request) {
       }
     });
 
-    // 邮件发送通道：未配置 SES 密钥时记录为 pending（不谎报已发送）
-    const { isMailConfigured } = await import('@/lib/admin/mailer');
-    const mailConfigured = isMailConfigured();
+    // 合规过滤：已退订 / 在账户里关掉营销订阅的人，一律不发
+    const { all: dbAll } = await import('@/lib/db/loader');
+    const optedOut = new Set(
+      dbAll<{ email: string }>(
+        "SELECT lower(email) AS email FROM users WHERE marketing_opt_in = 0"
+      ).map((r) => r.email)
+    );
+    const recipients = all.filter((c) => {
+      const e = c.email.trim().toLowerCase();
+      return !isSuppressed(e) && !optedOut.has(e);
+    });
+    const skipped = all.length - recipients.length;
+
     let sent = 0;
-    for (const r of recipients) {
-      if (mailConfigured) {
-        try {
-          const { sendCampaignEmail } = await import('@/lib/admin/mailer');
-          await sendCampaignEmail(r.email, campaign.subject, campaign.body);
-          logEmail(id, r.email, 'sent');
-          sent += 1;
-        } catch (err) {
-          logEmail(id, r.email, 'failed', err instanceof Error ? err.message : 'unknown');
-        }
+    let failed = 0;
+    for (let i = 0; i < recipients.length; i += 1) {
+      const r = recipients[i];
+      const out = await sendMarketing({ to: r.email, subject: campaign.subject, html: campaign.body });
+      if (out.ok) {
+        logEmail(id, r.email, 'sent');
+        sent += 1;
       } else {
-        logEmail(id, r.email, 'pending', '邮件通道未配置');
+        logEmail(id, r.email, 'failed', out.error);
+        failed += 1;
       }
+      // Resend 免费档 2 req/s，最后一封不必等
+      if (i < recipients.length - 1) await sleep(cfg.throttleMs);
     }
-    updateCampaignStatus(id, mailConfigured ? 'sent' : 'draft', sent, now());
+
+    updateCampaignStatus(id, 'sent', sent, now());
     persistSoon();
-    audit(auth.staff, 'campaign.send', id, `recipients=${recipients.length} sent=${sent}`);
+    audit(
+      auth.staff,
+      'campaign.send',
+      id,
+      `candidates=${all.length} skipped=${skipped} sent=${sent} failed=${failed}`
+    );
     return json({
       ok: true,
+      candidates: all.length,
       recipients: recipients.length,
       sent,
-      delivered: mailConfigured,
-      message: mailConfigured ? '已发送' : '邮件通道未配置，收件人已记录为待发送',
+      failed,
+      skipped,
+      delivered: true,
+      message: `已发送 ${sent} 封${skipped ? `，跳过已退订/关闭订阅 ${skipped} 人` : ''}${failed ? `，失败 ${failed} 封` : ''}`,
     });
   }
 

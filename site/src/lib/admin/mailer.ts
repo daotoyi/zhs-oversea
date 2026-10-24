@@ -1,80 +1,59 @@
 /**
- * 邮件发送通道 —— 腾讯云 SES（零依赖，fetch + TC3-HMAC-SHA256 签名）
+ * 邮件通道（兼容层）
  *
- * 未配置 TENCENT_SES_SECRET_ID / TENCENT_SES_SECRET_KEY 时，
- * 后台推广邮件只记录收件人为 pending，不谎报已发送。
+ * v0.0.10 起发信改由 lib/mail/* 承担：
+ *   - 交易邮件走 zhenhesheng.com（Resend）
+ *   - 营销邮件走 news.zhenhesheng.com（Resend），带退订链接与物理地址
+ *
+ * 本文件保留原有导出名，避免调用点大改；新代码请直接用 lib/mail/send。
+ * 腾讯云 SES 的旧实现已移除：跨境 + 共享 IP 的送达率撑不起「密码重置」这类
+ * 必须进收件箱的邮件，且原实现无法带 List-Unsubscribe 头。
  */
 
-import crypto from 'node:crypto';
+import { mailConfig, transactionalReady, missingMailConfig } from '@/lib/mail/config';
+import { sendTransactional, sendMarketing } from '@/lib/mail/send';
 
-function sha256hex(data: string): string {
-  return crypto.createHash('sha256').update(data, 'utf8').digest('hex');
+/** 交易邮件是否可发（密码重置依赖它） */
+export function isMailConfigured(): boolean {
+  return transactionalReady();
 }
 
-function hmac(key: crypto.KeyObject | string, data: string): string {
-  return crypto.createHmac('sha256', key).update(data, 'utf8').digest('hex');
+/** 营销邮件是否可发（与交易邮件共用 Resend Key，但要求单独的 From） */
+export function isMarketingConfigured(): boolean {
+  const c = mailConfig();
+  return Boolean(c.resendKey && c.fromMarketing && c.physicalAddress);
 }
 
-function tc3Sign(
-  secretId: string,
-  secretKey: string,
-  service: string,
-  host: string,
-  action: string,
-  version: string,
-  region: string,
-  payload: string
-): Record<string, string> {
-  const algorithm = 'TC3-HMAC-SHA256';
-  const timestamp = Math.floor(Date.now() / 1000);
-  const date = new Date(timestamp * 1000).toISOString().slice(0, 10);
-
-  const canonicalRequest = `POST\n/\n\ncontent-type:application/json\nhost:${host}\n\ncontent-type;host\n${sha256hex(payload)}`;
-  const credentialScope = `${date}/${service}/tc3_request`;
-  const stringToSign = `${algorithm}\n${timestamp}\n${credentialScope}\n${sha256hex(canonicalRequest)}`;
-
-  const kDate = crypto.createHmac('sha256', `TC3${secretKey}`).update(date).digest();
-  const kService = crypto.createHmac('sha256', kDate).update(service).digest();
-  const kSigning = crypto.createHmac('sha256', kService).update('tc3_request').digest();
-  const signature = crypto.createHmac('sha256', kSigning).update(stringToSign).digest('hex');
-
+export function mailStatus() {
+  const c = mailConfig();
   return {
-    Authorization: `${algorithm} Credential=${secretId}/${credentialScope}, SignedHeaders=content-type;host, Signature=${signature}`,
-    'Content-Type': 'application/json',
-    Host: host,
-    'X-TC-Action': action,
-    'X-TC-Version': version,
-    'X-TC-Timestamp': String(timestamp),
-    'X-TC-Region': region,
+    ready: Boolean(c.resendKey),
+    marketingReady: isMarketingConfigured(),
+    fromTransactional: c.fromTransactional,
+    fromMarketing: c.fromMarketing,
+    replyTo: c.replyTo,
+    physicalAddress: c.physicalAddress,
+    missing: missingMailConfig(),
   };
 }
 
-export function isMailConfigured(): boolean {
-  return Boolean(process.env.TENCENT_SES_SECRET_ID && process.env.TENCENT_SES_SECRET_KEY);
+/** 交易邮件（密码重置、账号通知） */
+export async function sendTransactionalEmail(to: string, subject: string, html: string): Promise<void> {
+  const r = await sendTransactional({ to, subject, html });
+  if (!r.ok) throw new Error(r.error);
 }
 
+/**
+ * 营销邮件（后台「邮件推广」群发）
+ *
+ * 注意：会自动查询退订名单并在函数内跳过——调用方仍需按返回值区分
+ * 「已退订跳过」与「真失败」，不要都记成 failed。
+ */
 export async function sendCampaignEmail(to: string, subject: string, html: string): Promise<void> {
-  const secretId = process.env.TENCENT_SES_SECRET_ID;
-  const secretKey = process.env.TENCENT_SES_SECRET_KEY;
-  if (!secretId || !secretKey) throw new Error('邮件通道未配置');
-
-  const region = process.env.TENCENT_SES_REGION || 'ap-guangzhou';
-  const host = 'ses.tencentcloudapi.com';
-  const from = process.env.TENCENT_SES_FROM || 'hello@zhenhesheng.com';
-
-  const payload = JSON.stringify({
-    FromEmailAddress: from,
-    Destination: [to],
-    Subject: subject,
-    Html: html,
-  });
-
-  const headers = tc3Sign(secretId, secretKey, 'ses', host, 'SendEmail', '2022-01-05', region, payload);
-  const res = await fetch(`https://${host}/`, { method: 'POST', headers, body: payload });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`SES ${res.status}: ${text.slice(0, 200)}`);
+  const r = await sendMarketing({ to, subject, html });
+  if (!r.ok) {
+    const err = new Error(r.error) as Error & { skipped?: string };
+    if (r.skipped) err.skipped = r.skipped;
+    throw err;
   }
-  const data = (await res.json().catch(() => null)) as { Response?: { Error?: { Message?: string } } } | null;
-  if (data?.Response?.Error) throw new Error(data.Response.Error.Message || 'SES error');
 }

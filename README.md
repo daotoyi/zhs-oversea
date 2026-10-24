@@ -105,9 +105,20 @@ bash scripts/deploy.sh # 构建→打包→备份→上传→重启→清缓存�
 ## 待办
 
 - [ ] 香港公司注册 + Stripe 香港开户（当前 checkout 因缺密钥而降级）
+- [ ] **邮件 DNS 落地**：腾讯企业邮 MX（收信）+ Resend（交易/营销）→ 见 [docs/邮件配置清单.md](docs/邮件配置清单.md)
 - [ ] 商品图补拍（现为复用素材，多 SKU 共用同一张图）
 - [ ] 接入真实库存
 - [ ] 81 章英文全文按月补齐（流量主引擎）
+
+## 邮件（三条管道，别混用）
+
+| 管道 | 域名 | 用途 | 谁发 |
+|---|---|---|---|
+| 收信 | `zhenhesheng.com` MX | `hello@` / `orders@` 人工读信 | 腾讯企业邮 |
+| 交易 | `zhenhesheng.com` | 密码重置、账号通知 | Resend |
+| 营销 | `news.zhenhesheng.com` | 后台群发 | Resend（带退订） |
+
+凭据在后台 `/admin/settings` 填（存数据库，填完即生效）。配置步骤见 [docs/邮件配置清单.md](docs/邮件配置清单.md)。
 
 ---
 

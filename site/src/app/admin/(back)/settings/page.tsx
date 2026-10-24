@@ -1,7 +1,10 @@
 import { initDb } from '@/lib/db/loader';
 import { listSettings } from '@/lib/settings';
 import { credentials, missingFields } from '@/lib/account/oauth';
+import { mailConfig, missingMailConfig } from '@/lib/mail/config';
+import { listSuppressions, suppressionCount } from '@/lib/mail/suppression';
 import OAuthSettings from '@/components/admin/OAuthSettings';
+import MailSettings from '@/components/admin/MailSettings';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,13 +14,14 @@ export default async function SettingsPage() {
 
   const google = credentials('google');
   const apple = credentials('apple');
+  const mail = mailConfig();
 
   return (
     <>
       <div className="adm-page-head">
         <div>
-          <h1>登录配置</h1>
-          <p>Google / Apple 一键登录 · 填完即生效，无需改代码或重启</p>
+          <h1>登录与邮件配置</h1>
+          <p>Google / Apple 一键登录 · 邮件发信通道 · 填完即生效，无需改代码或重启</p>
         </div>
       </div>
 
@@ -40,6 +44,24 @@ export default async function SettingsPage() {
               process.env.APPLE_KEY_ID &&
               process.env.APPLE_PRIVATE_KEY
           ),
+        }}
+      />
+
+      <hr className="rule" style={{ margin: '30px 0 4px' }} />
+
+      <MailSettings
+        initial={{
+          ready: Boolean(mail.resendKey),
+          marketingReady: Boolean(mail.resendKey && mail.fromMarketing && mail.physicalAddress),
+          keyTail: mail.resendKey ? mail.resendKey.slice(-4) : '',
+          fromTransactional: mail.fromTransactional,
+          fromMarketing: mail.fromMarketing,
+          replyTo: mail.replyTo,
+          physicalAddress: mail.physicalAddress,
+          companyName: mail.companyName,
+          missing: missingMailConfig(),
+          suppressions: listSuppressions(200),
+          suppressionsTotal: suppressionCount(),
         }}
       />
     </>

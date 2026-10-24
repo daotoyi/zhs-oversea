@@ -111,9 +111,20 @@ export function persist(): void {
   if (!st) return;
   const dir = path.dirname(st.dbPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  const tmp = st.dbPath + '.tmp';
-  fs.writeFileSync(tmp, Buffer.from(st.db.export()));
-  fs.renameSync(tmp, st.dbPath);
+  // 临时文件名必须唯一：固定名在「两个进程/实例同时落盘」时会互相覆盖，
+  // 写出半截文件 → SQLite 报 malformed，甚至让 sql.js 原生崩溃（本地真实踩到过）。
+  const tmp = `${st.dbPath}.${process.pid}.${Date.now().toString(36)}.tmp`;
+  try {
+    fs.writeFileSync(tmp, Buffer.from(st.db.export()));
+    fs.renameSync(tmp, st.dbPath);
+  } catch (err) {
+    try {
+      if (fs.existsSync(tmp)) fs.unlinkSync(tmp);
+    } catch {
+      /* ignore */
+    }
+    throw err;
+  }
 }
 
 /** 写操作后调用（50ms 合并窗口，避免一次请求内多次 export） */

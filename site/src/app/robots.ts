@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/api/', '/cart', '/checkout/'],
+        disallow: ['/api/', '/cart', '/checkout/', '/account', '/unsubscribe'],
       },
     ],
     sitemap: 'https://zhenhesheng.com/sitemap.xml',

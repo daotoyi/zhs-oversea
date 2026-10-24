@@ -219,6 +219,23 @@ CREATE TABLE IF NOT EXISTS settings (
   updated_by TEXT,
   updated_at INTEGER NOT NULL
 );
+
+/* ── 邮件 ──
+   退订/拒收名单：营销邮件必须尊重；交易邮件（密码重置等）不查此表。
+   unsubscribe_tokens 用于生成不可枚举的退订链接（token → email 反查，
+   URL 里不暴露收件人地址，避免转发/日志泄露）。 */
+CREATE TABLE IF NOT EXISTS email_suppressions (
+  email TEXT PRIMARY KEY,
+  reason TEXT NOT NULL DEFAULT 'unsubscribe',
+  source TEXT,
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS mail_unsubscribe_tokens (
+  email TEXT PRIMARY KEY,
+  token TEXT UNIQUE NOT NULL,
+  created_at INTEGER NOT NULL
+);
 `;
 
 /** 后台模块定义（权限粒度） */
@@ -231,7 +248,7 @@ export const MODULES = [
   { key: 'sales', label: '节日折扣', labelEn: 'Sale events' },
   { key: 'campaigns', label: '邮件推广', labelEn: 'Campaigns' },
   { key: 'staff', label: '员工管理', labelEn: 'Staff' },
-  { key: 'settings', label: '登录配置', labelEn: 'Sign-in' },
+  { key: 'settings', label: '登录与邮件', labelEn: 'Sign-in & mail' },
 ] as const;
 
 export type ModuleKey = (typeof MODULES)[number]['key'];

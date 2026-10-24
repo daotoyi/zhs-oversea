@@ -3,7 +3,7 @@ import { initDb } from '@/lib/db/loader';
 import { bad, json, readJson } from '@/lib/account/api';
 import { clientIp, normalizeEmail, rateLimit } from '@/lib/account/auth';
 import { createToken, findUserByEmail } from '@/lib/account/dao';
-import { isMailConfigured, sendCampaignEmail } from '@/lib/admin/mailer';
+import { isMailConfigured, sendTransactionalEmail } from '@/lib/admin/mailer';
 import { publicBaseUrl } from '@/lib/admin/http';
 
 export const runtime = 'nodejs';
@@ -39,7 +39,8 @@ export async function POST(req: NextRequest) {
         <p>重设真和盛账户密码，请点击上方链接，一小时内有效。若非本人操作请忽略本邮件。</p>
       </div>`;
     try {
-      await sendCampaignEmail(email, 'Reset your Zhen He Sheng password / 重设密码', html);
+      // 交易邮件：不受退订名单影响（退过营销的人同样有权找回账户）
+      await sendTransactionalEmail(email, 'Reset your Zhen He Sheng password / 重设密码', html);
     } catch (err) {
       console.error('[account] reset mail failed:', err instanceof Error ? err.message : err);
       return bad('邮件发送失败，请稍后重试或直接联系我们', 502);
