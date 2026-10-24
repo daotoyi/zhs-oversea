@@ -41,6 +41,9 @@ rm -rf "$STAGE"; mkdir -p "$STAGE"
 rsync -a "$SITE/.next/standalone/" "$STAGE/"
 rm -rf "$STAGE/.next/static" && cp -R "$SITE/.next/static" "$STAGE/.next/static"
 rm -rf "$STAGE/public" && cp -R "$SITE/public" "$STAGE/public"
+# ⚠ 绝不能把本机 .data（开发库）打进产物：解压后会覆盖线上数据库。
+# next.config.ts 的 outputFileTracingExcludes 已排除，这里再做一次物理删除。
+rm -rf "$STAGE/.data"
 
 if [ -f "$SITE/.env.production" ]; then
   cp "$SITE/.env.production" "$STAGE/.env.production"
@@ -67,6 +70,18 @@ echo "→ 打包"
 tar -czf "$TARBALL" -C "$STAGE" .
 echo "   $(du -h "$TARBALL" | cut -f1)"
 
+# 最后一道闸：产物里出现 .data 就中止（否则线上库会被本机开发库覆盖）
+if tar -tzf "$TARBALL" | grep -q '^\./\.data'; then
+  echo "✗ 产物包含 .data，会覆盖线上数据库，已中止部署"
+  exit 1
+fi
+
+# 本机没有 .env.production 时，产物里也不会有 —— 此时必须保留服务器上的那份，
+# 否则每次部署都会把线上的密钥（Stripe / SES / OAuth）冲成只有两行的默认文件。
+ENV_IN_TARBALL=0
+if tar -tzf "$TARBALL" | grep -q '^\./\.env\.production$'; then ENV_IN_TARBALL=1; fi
+echo "   .env.production 随包: $([ "$ENV_IN_TARBALL" = "1" ] && echo 是 || echo 否（保留服务器现有）)"
+
 echo "→ 上传"
 scp -o StrictHostKeyChecking=no "$TARBALL" "$USER@$HOST:/tmp/site.tar.gz"
 
@@ -78,11 +93,15 @@ ssh -o StrictHostKeyChecking=no "$USER@$HOST" \
    else echo '   线上为空，跳过备份'; fi"
 
 echo "→ 解压并重启"
+# 恢复逻辑要点：先取出线上 .data 到 /tmp，解压后**确保目标不存在**再 mv 回来，
+# 否则会变成 .data/zhs-data-keep-xxx 嵌套目录（线上库看起来"消失"）。
 ssh -o StrictHostKeyChecking=no "$USER@$HOST" \
-  "if [ -d $APP_DIR/.data ]; then mv $APP_DIR/.data /tmp/zhs-data-keep-$STAMP; fi; \
+  "if [ -d $APP_DIR/.data ]; then rm -rf /tmp/zhs-data-keep-$STAMP; mv $APP_DIR/.data /tmp/zhs-data-keep-$STAMP; fi; \
+   if [ $ENV_IN_TARBALL -eq 0 ] && [ -f $APP_DIR/.env.production ]; then rm -f /tmp/zhs-env-keep-$STAMP; cp $APP_DIR/.env.production /tmp/zhs-env-keep-$STAMP; fi; \
    rm -rf $APP_DIR/* $APP_DIR/.[!.]* 2>/dev/null || true; \
    tar -xzf /tmp/site.tar.gz -C $APP_DIR; \
-   if [ -d /tmp/zhs-data-keep-$STAMP ]; then mv /tmp/zhs-data-keep-$STAMP $APP_DIR/.data; fi; \
+   if [ -d /tmp/zhs-data-keep-$STAMP ]; then rm -rf $APP_DIR/.data; mv /tmp/zhs-data-keep-$STAMP $APP_DIR/.data; fi; \
+   if [ -f /tmp/zhs-env-keep-$STAMP ] && [ ! -f $APP_DIR/.env.production ]; then mv /tmp/zhs-env-keep-$STAMP $APP_DIR/.env.production; fi; \
    chown -R www:www $APP_DIR; \
    cd $APP_DIR && pm2 delete $PM2_NAME >/dev/null 2>&1 || true; \
    pm2 start ecosystem.config.js && pm2 save"
