@@ -39,6 +39,22 @@ cp .env.example .env.production   # 填入 Stripe 密钥
 npm run dev
 ```
 
+## 版本号（每次修改必做）
+
+**约定：默认迭代第三位版本号（patch）。每次代码修改完成后，执行一次递增。**
+
+```bash
+cd site
+npm run version:push     # 0.0.2 → 0.0.3，自动 commit + 打 tag + 推送 GitHub
+```
+
+- `version:push` —— 第三位 +1，推送 commit 与 tag（默认用这个）
+- `version:bump`  —— 同上，但不推送（仅本地 commit + tag）
+- 需要跳位时：`bash scripts/bump-version.sh minor`（第二位）或 `major`（第一位）
+
+版本号唯一来源是 `site/package.json` 的 `version` 字段，tag 形如 `v0.0.3`。
+流程：改代码 → 构建验证 → 部署 → `npm run version:push`。
+
 ## 部署
 
 ```bash
@@ -55,7 +71,7 @@ bash scripts/deploy.sh # 构建→打包→备份→上传→重启→清缓存�
 
 | 项 | 约定 |
 |---|---|
-| 版本 | 语义化版本，当前 **v0.0.1** |
+| 版本 | 语义化版本，当前 **v0.0.2**；每次修改递增第三位，见上文「版本号」 |
 | 交易 | 实物走标准 Stripe + Stripe Tax；数字产品走 Stripe Managed Payments（MoR） |
 | 结汇 | Airwallex 收单 → 万里汇结汇回大陆 |
 | 合规 | 朱砂只做封闭封装展示级；CITES 物种逐 SKU 存证；全站无功效宣称 |
