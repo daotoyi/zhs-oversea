@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zhen He Sheng — Dao Culture &amp; Living | Home mockup v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@400;500&family=Noto+Serif+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F7F4ED; --porcelain:#FFFFFF; --ink:#1A1714; --ash:#6B645B;
+  --cinnabar:#9E3B2E; --celadon:#5C6B58; --rule:#E3DDD0;
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
+  --cjk:'Noto Serif SC','Songti SC',serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1240px;margin:0 auto;padding:0 32px}
+.serif{font-family:var(--serif)}
+.cjk{font-family:var(--cjk)}
+.eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ash);font-weight:500}
+.rule{height:1px;background:var(--rule);border:0}
+
+/* ---------- top bar ---------- */
+.topbar{background:var(--ink);color:#EDE8DD;font-size:11.5px;letter-spacing:.06em;padding:9px 0;text-align:center}
+.topbar span{margin:0 10px;opacity:.6}
+
+/* ---------- nav ---------- */
+.nav{position:sticky;top:0;z-index:50;background:rgba(247,244,237,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--rule)}
+.nav-in{display:flex;align-items:center;justify-content:space-between;height:72px}
+.brand{display:flex;align-items:center;gap:11px}
+.brand-mark{width:30px;height:30px;border:1px solid var(--ink);border-radius:50%;display:grid;place-items:center;font-size:15px}
+.brand-name{font-family:var(--serif);font-size:20px;letter-spacing:.14em;line-height:1}
+.brand-sub{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash);margin-top:3px}
+.menu{display:flex;gap:34px;font-size:13px;color:var(--ink)}
+.menu a{position:relative;padding:4px 0}
+.menu a::after{content:"";position:absolute;left:0;bottom:0;height:1px;width:0;background:var(--cinnabar);transition:width .25s}
+.menu a:hover::after{width:100%}
+.menu a.on{color:var(--cinnabar)}
+.nav-acts{display:flex;align-items:center;gap:20px;font-size:12.5px;color:var(--ink)}
+.cart{display:flex;align-items:center;gap:7px}
+.bag{width:19px;height:19px;border:1px solid var(--ink);border-radius:2px;position:relative}
+.bag::after{content:"0";position:absolute;top:-8px;right:-8px;background:var(--cinnabar);color:#fff;font-size:9px;width:14px;height:14px;border-radius:50%;display:grid;place-items:center}
+
+/* ---------- hero ---------- */
+.hero{position:relative;min-height:calc(100vh - 108px);display:flex;align-items:flex-end;overflow:hidden}
+.hero-bg{position:absolute;inset:0}
+.hero-bg img{width:100%;height:100%;object-fit:cover;object-position:center 42%}
+.hero-veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(26,23,20,.42) 0%,rgba(26,23,20,.18) 42%,rgba(26,23,20,.72) 100%)}
+.hero-in{position:relative;z-index:2;width:100%;padding:0 32px 76px}
+.hero-copy{max-width:760px;color:#F7F4ED}
+.hero-eyebrow{font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.82;margin-bottom:22px}
+.hero h1{font-family:var(--serif);font-weight:300;font-size:clamp(2.7rem,6.4vw,5.1rem);line-height:1.04;letter-spacing:-.015em;margin-bottom:22px}
+.hero h1 em{font-style:italic;font-weight:400}
+.hero-sub{font-size:15.5px;line-height:1.75;max-width:520px;opacity:.9;margin-bottom:34px}
+.hero-cta{display:flex;gap:14px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:9px;padding:15px 30px;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:500;border:1px solid transparent;transition:.22s;cursor:pointer}
+.btn-solid{background:var(--cinnabar);color:#fff}
+.btn-solid:hover{background:#8a3025}
+.btn-ghost{border-color:rgba(247,244,237,.55);color:#F7F4ED}
+.btn-ghost:hover{background:rgba(247,244,237,.13)}
+.hero-note{position:absolute;right:32px;bottom:76px;z-index:2;text-align:right;color:#F7F4ED;font-size:11.5px;opacity:.75;max-width:220px;line-height:1.65}
+.hero-note b{display:block;font-family:var(--serif);font-size:15px;font-weight:400;letter-spacing:.05em;opacity:1;margin-bottom:3px}
+
+/* ---------- trust ---------- */
+.trust{background:var(--porcelain);border-bottom:1px solid var(--rule)}
+.trust-grid{display:grid;grid-template-columns:repeat(4,1fr)}
+.trust-item{padding:26px 30px;border-right:1px solid var(--rule)}
+.trust-item:last-child{border-right:0}
+.trust-item h4{font-size:12.5px;font-weight:500;letter-spacing:.03em;margin-bottom:5px}
+.trust-item p{font-size:12px;color:var(--ash);line-height:1.6}
+.trust-ico{width:20px;height:20px;border:1px solid var(--cinnabar);border-radius:50%;display:grid;place-items:center;color:var(--cinnabar);font-size:10px;margin-bottom:12px}
+
+/* ---------- section shell ---------- */
+.sec{padding:104px 0}
+.sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:40px;margin-bottom:52px}
+.sec-head h2{font-family:var(--serif);font-weight:300;font-size:clamp(1.9rem,3.4vw,2.9rem);line-height:1.14;letter-spacing:-.01em}
+.sec-head h2 em{font-style:italic}
+.sec-head .lead{font-size:14.5px;color:var(--ash);max-width:400px;line-height:1.75}
+.link-more{font-size:12px;letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid var(--ink);padding-bottom:3px;white-space:nowrap}
+.link-more:hover{color:var(--cinnabar);border-color:var(--cinnabar)}
+
+/* ---------- origins ---------- */
+.origins{background:var(--porcelain);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.origins-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:78px;align-items:center}
+.origins-media{position:relative}
+.origins-media img{width:100%;aspect-ratio:4/5;object-fit:cover}
+.origins-tag{position:absolute;left:-22px;bottom:34px;background:var(--porcelain);border:1px solid var(--rule);padding:18px 24px;max-width:250px}
+.origins-tag p{font-family:var(--serif);font-size:15px;line-height:1.55}
+.origins-tag span{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash);display:block;margin-bottom:7px}
+.origins-body h2{font-family:var(--serif);font-weight:300;font-size:clamp(2rem,3.6vw,3.1rem);line-height:1.12;margin-bottom:22px}
+.origins-body .lead{font-size:15px;color:#4A443C;line-height:1.85;margin-bottom:20px}
+.origins-body .zh{font-family:var(--cjk);font-size:19px;color:var(--cinnabar);letter-spacing:.22em;margin-bottom:30px}
+.origins-list{list-style:none;margin-bottom:34px}
+.origins-list li{display:flex;gap:16px;padding:15px 0;border-top:1px solid var(--rule);font-size:13.5px;color:#4A443C}
+.origins-list li b{font-weight:500;color:var(--ink);min-width:96px;display:block}
+
+/* ---------- objects ---------- */
+.obj-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.obj-card{display:block}
+.obj-media{position:relative;overflow:hidden;background:#EFEBE1;aspect-ratio:4/5}
+.obj-media img{width:100%;height:100%;object-fit:cover;transition:transform .7s cubic-bezier(.2,.7,.3,1)}
+.obj-card:hover .obj-media img{transform:scale(1.045)}
+.obj-price{position:absolute;right:12px;bottom:12px;background:rgba(247,244,237,.94);font-size:11.5px;padding:6px 12px;letter-spacing:.04em}
+.obj-body{padding:16px 2px 0}
+.obj-cat{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--cinnabar);margin-bottom:7px}
+.obj-name{font-family:var(--serif);font-size:20px;line-height:1.3;margin-bottom:4px}
+.obj-zh{font-family:var(--cjk);font-size:13px;color:var(--ash);margin-bottom:8px}
+.obj-desc{font-size:12.5px;color:var(--ash);line-height:1.6}
+
+/* ---------- practice ---------- */
+.practice{background:var(--ink);color:#EDE8DD}
+.practice .eyebrow{color:#9A9287}
+.practice .sec-head h2{color:#F7F4ED}
+.practice .sec-head .lead{color:#A9A196}
+.practice-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:64px}
+.chapter-card{background:#211D19;border:1px solid #35302A;padding:44px 42px}
+.chapter-card .num{font-family:var(--serif);font-size:12px;letter-spacing:.24em;color:var(--cinnabar);margin-bottom:22px}
+.chapter-card h3{font-family:var(--serif);font-weight:300;font-size:clamp(1.5rem,2.6vw,2.1rem);line-height:1.25;margin-bottom:8px}
+.chapter-card .zh{font-family:var(--cjk);font-size:15px;color:#8F877C;letter-spacing:.14em;margin-bottom:24px}
+.chapter-card blockquote{font-family:var(--serif);font-style:italic;font-size:17.5px;line-height:1.62;color:#D9D2C5;padding-left:22px;border-left:1px solid var(--cinnabar);margin-bottom:26px}
+.chapter-card .trans{font-size:13px;color:#A9A196;line-height:1.75;margin-bottom:26px}
+.chapter-foot{display:flex;align-items:center;justify-content:space-between;gap:20px;padding-top:22px;border-top:1px solid #35302A}
+.chapter-foot span{font-size:11.5px;color:#8F877C}
+.chapter-foot a{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#D9D2C5;border-bottom:1px solid #55504A;padding-bottom:2px}
+.chapter-foot a:hover{color:#fff;border-color:#D9D2C5}
+.practice-side{display:flex;flex-direction:column;gap:20px}
+.hex-list{border-top:1px solid #35302A}
+.hex-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 0;border-bottom:1px solid #35302A;font-size:13px}
+.hex-row .zh{font-family:var(--cjk);font-size:13px;color:#8F877C}
+.hex-row b{font-family:var(--serif);font-weight:400;font-size:16px}
+.sub-card{background:#211D19;border:1px solid #35302A;padding:32px 30px}
+.sub-card h4{font-family:var(--serif);font-size:22px;font-weight:400;margin-bottom:8px}
+.sub-card p{font-size:12.5px;color:#A9A196;line-height:1.7;margin-bottom:20px}
+.sub-input{display:flex;border:1px solid #4A443C}
+.sub-input input{flex:1;background:transparent;border:0;color:#EDE8DD;padding:12px 14px;font-family:var(--sans);font-size:13px;outline:none}
+.sub-input button{background:var(--cinnabar);color:#fff;border:0;padding:0 20px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+.sub-input button:hover{background:#8a3025}
+
+/* ---------- traceability ---------- */
+.trace{background:var(--porcelain);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.trace-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:76px;align-items:center}
+.trace-list{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.trace-cell{background:var(--porcelain);padding:28px 26px}
+.trace-cell .k{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ash);margin-bottom:9px}
+.trace-cell .v{font-family:var(--serif);font-size:19px;line-height:1.35}
+.trace-cell .v small{display:block;font-family:var(--sans);font-size:11.5px;color:var(--ash);letter-spacing:0;margin-top:7px;line-height:1.55}
+.trace-body h2{font-family:var(--serif);font-weight:300;font-size:clamp(1.9rem,3.4vw,2.8rem);line-height:1.14;margin-bottom:20px}
+.trace-body .lead{font-size:14.5px;color:#4A443C;line-height:1.8;margin-bottom:26px}
+.trace-body ul{list-style:none;margin-bottom:30px}
+.trace-body ul li{font-size:13.5px;color:#4A443C;padding:12px 0 12px 24px;border-top:1px solid var(--rule);position:relative}
+.trace-body ul li::before{content:"";position:absolute;left:0;top:20px;width:7px;height:7px;background:var(--cinnabar)}
+
+/* ---------- journal ---------- */
+.journal-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:30px}
+.journal-card{display:block}
+.journal-media{overflow:hidden;background:#EFEBE1;aspect-ratio:5/3}
+.journal-media img{width:100%;height:100%;object-fit:cover;transition:transform .7s cubic-bezier(.2,.7,.3,1)}
+.journal-card:hover img{transform:scale(1.04)}
+.journal-meta{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--cinnabar);margin:16px 0 9px}
+.journal-card h4{font-family:var(--serif);font-weight:400;font-size:21px;line-height:1.3;margin-bottom:7px}
+.journal-card p{font-size:12.5px;color:var(--ash);line-height:1.65}
+
+/* ---------- faq ---------- */
+.faq{background:var(--porcelain);border-top:1px solid var(--rule)}
+.faq-grid{display:grid;grid-template-columns:.72fr 1.28fr;gap:72px}
+.faq-list{border-top:1px solid var(--rule)}
+.faq-item{border-bottom:1px solid var(--rule)}
+.faq-q{width:100%;background:none;border:0;text-align:left;padding:20px 40px 20px 0;font-family:var(--sans);font-size:14.5px;font-weight:500;color:var(--ink);cursor:pointer;position:relative;line-height:1.5}
+.faq-q::after{content:"+";position:absolute;right:6px;top:18px;font-size:19px;font-weight:400;color:var(--ash);transition:.2s}
+.faq-item.open .faq-q::after{content:"−";color:var(--cinnabar)}
+.faq-a{display:none;padding:0 40px 22px 0;font-size:13.5px;color:var(--ash);line-height:1.8}
+.faq-item.open .faq-a{display:block}
+.faq-side h2{font-family:var(--serif);font-weight:300;font-size:clamp(1.8rem,3.2vw,2.6rem);line-height:1.16;margin-bottom:18px}
+.faq-side p{font-size:13.5px;color:var(--ash);line-height:1.8;margin-bottom:24px}
+.faq-side .contact-box{border:1px solid var(--rule);padding:22px 24px}
+.faq-side .contact-box p{font-size:12.5px;margin-bottom:12px}
+.faq-side .contact-box a{font-size:13px;color:var(--cinnabar);border-bottom:1px solid var(--cinnabar)}
+
+/* ---------- footer ---------- */
+.footer{background:var(--ink);color:#A9A196;padding:72px 0 34px}
+.foot-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:56px;margin-bottom:56px}
+.foot-brand .brand-mark{border-color:#EDE8DD;color:#EDE8DD}
+.foot-brand .brand-name{color:#F7F4ED}
+.foot-brand .brand-sub{color:#8F877C}
+.foot-brand p{font-size:12.5px;line-height:1.8;margin:20px 0 22px;max-width:300px}
+.foot-brand .cn-link{font-size:12px;color:#D9D2C5;border-bottom:1px solid #4A443C;padding-bottom:3px}
+.foot-col h5{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#EDE8DD;margin-bottom:18px;font-weight:500}
+.foot-col a{display:block;font-size:12.5px;padding:6px 0;color:#A9A196}
+.foot-col a:hover{color:#F7F4ED}
+.foot-bottom{border-top:1px solid #35302A;padding-top:26px;display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:center}
+.foot-bottom p{font-size:11px;line-height:1.7}
+.pay-row{display:flex;gap:8px;align-items:center}
+.pay-badge{border:1px solid #4A443C;border-radius:3px;padding:5px 9px;font-size:9.5px;letter-spacing:.08em;color:#A9A196}
+
+.note{position:fixed;right:20px;bottom:20px;z-index:80;background:var(--ink);color:#EDE8DD;padding:12px 18px;font-size:11.5px;letter-spacing:.04em;border-left:2px solid var(--cinnabar);max-width:250px;line-height:1.6}
+.note b{display:block;font-size:12px;margin-bottom:3px;color:#fff;font-weight:500}
+
+@media(max-width:980px){
+  .menu,.nav-acts .hide-sm{display:none}
+  .trust-grid{grid-template-columns:1fr 1fr}
+  .obj-grid,.journal-grid{grid-template-columns:1fr 1fr}
+  .origins-grid,.trace-grid,.practice-grid,.faq-grid{grid-template-columns:1fr;gap:44px}
+  .foot-grid{grid-template-columns:1fr 1fr}
+  .sec{padding:72px 0}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">Free US shipping over $60 · Duties included at checkout · 30-day returns<span>·</span>Consecration certificates on every ritual object</div>
+
+<nav class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#">
+      <span class="brand-mark">☯</span>
+      <span>
+        <span class="brand-name">ZHEN HE SHENG</span>
+        <span class="brand-sub">Dao Culture &amp; Living</span>
+      </span>
+    </a>
+    <div class="menu">
+      <a href="#">Classics</a>
+      <a href="#objects" class="on">Objects</a>
+      <a href="#practice">Practice</a>
+      <a href="#traceability">Traceability</a>
+      <a href="#journal">Journal</a>
+      <a href="#">About</a>
+    </div>
+    <div class="nav-acts">
+      <a href="#" class="hide-sm">Search</a>
+      <a href="#" class="hide-sm">Account</a>
+      <a href="#" class="cart">Bag <span class="bag"></span></a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-bg">
+    <img src="assets/lightning-wood.jpg" alt="Lightning-struck jujube wood ritual object on a scholar's desk">
+  </div>
+  <div class="hero-veil"></div>
+  <div class="hero-in">
+    <div class="hero-copy">
+      <div class="hero-eyebrow">Beijing · Since the lineage of Longhu Mountain</div>
+      <h1>Ancient Dao wisdom,<br><em>made tangible.</em></h1>
+      <p class="hero-sub">Eighty-one chapters of the <em>Dao De Jing</em> in plain English. Hand-thrown tea ware, ritual incense, and desk objects — each traced to its maker, its material, and its consecration.</p>
+      <div class="hero-cta">
+        <a class="btn btn-solid" href="#objects">Explore the collection</a>
+        <a class="btn btn-ghost" href="#practice">Read the Dao De Jing</a>
+      </div>
+    </div>
+  </div>
+  <div class="hero-note">
+    <b>Chapter 8</b>
+    “The highest goodness is like water. Water benefits all things and does not contend.”
+  </div>
+</header>
+
+<section class="trust">
+  <div class="wrap trust-grid">
+    <div class="trust-item">
+      <div class="trust-ico">☯</div>
+      <h4>Traced consecration</h4>
+      <p>Every ritual object ships with a certificate number and the name of its lineage.</p>
+    </div>
+    <div class="trust-item">
+      <div class="trust-ico">◈</div>
+      <h4>Certified materials</h4>
+      <p>ISO 17025 lab reports for heavy metals. CITES status declared on every wooden piece.</p>
+    </div>
+    <div class="trust-item">
+      <div class="trust-ico">▤</div>
+      <h4>Free US shipping over $60</h4>
+      <p>Shipped from Beijing, 7–15 days. Duties and taxes settled at checkout.</p>
+    </div>
+    <div class="trust-item">
+      <div class="trust-ico">↺</div>
+      <h4>30-day returns</h4>
+      <p>Unworn, unused, and in its original packaging — no questions asked.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec origins">
+  <div class="wrap origins-grid">
+    <div class="origins-media">
+      <img src="assets/calligraphy-shangshan.jpg" alt="Calligraphy of the Dao De Jing opening">
+      <div class="origins-tag">
+        <span>The source</span>
+        <p>Not the popular <em>Dao De Jing</em>. The <strong>Mawangdui silk manuscript</strong> — the text Laozi actually wrote down.</p>
+      </div>
+    </div>
+    <div class="origins-body">
+      <div class="eyebrow">Origins · 道之源</div>
+      <h2>From a silk manuscript<br>found in a tomb.</h2>
+      <p class="lead">In 1973, workers excavating a tomb in Changsha opened a sealed silk scroll that had been untouched for two thousand years. Eighty-one chapters. No rhyme, no polish — the raw text.</p>
+      <p class="lead">Our line of study begins there. Every chapter we teach is read from that manuscript rather than the later, smoother editions the West has read for two centuries.</p>
+      <div class="zh">道 法 自 然 · 天 人 合 一</div>
+      <ul class="origins-list">
+        <li><b>Origin</b><span>Mawangdui silk text, read line by line against the received editions</span></li>
+        <li><b>Lineage</b><span>Longhu Mountain — ancestral home of Daoism, recognised through successive imperial dynasties</span></li>
+        <li><b>Teachers</b><span>Weekly study sessions in Beijing, open to any level</span></li>
+        <li><b>Practice</b><span>Tea, incense, calligraphy and divination as lived disciplines</span></li>
+      </ul>
+      <a class="link-more" href="#">Our lineage →</a>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="objects">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow">Objects · 道之器</div>
+        <h2>Objects for the<br><em>daily practice.</em></h2>
+      </div>
+      <div>
+        <p class="lead">Tea ware, incense, writing desk and ritual objects — made by named hands, in named workshops, with the material declared. Nothing here is anonymous.</p>
+        <div style="margin-top:18px"><a class="link-more" href="#">View all 18 objects →</a></div>
+      </div>
+    </div>
+
+    <div class="obj-grid">
+      <a class="obj-card" href="#">
+        <div class="obj-media">
+          <img src="assets/cinnabar-bracelet.jpg" alt="Cinnabar bracelet in gift pouch">
+          <span class="obj-price">from $88</span>
+        </div>
+        <div class="obj-body">
+          <div class="obj-cat">Talisman objects</div>
+          <h3 class="obj-name">Cinnabar &amp; Hetian Jade Bracelet</h3>
+          <p class="obj-zh">天然朱砂手串 · 和田玉</p>
+          <p class="obj-desc">Natural cinnabar, sealed in a silver cage. Shown only, never worn — with a heavy-metal assay report.</p>
+        </div>
+      </a>
+
+      <a class="obj-card" href="#">
+        <div class="obj-media">
+          <img src="assets/calligraphy-zhixu.jpg" alt="Calligraphy scroll in a wooden frame">
+          <span class="obj-price">$168</span>
+        </div>
+        <div class="obj-body">
+          <div class="obj-cat">Writing &amp; desk</div>
+          <h3 class="obj-name">“Reaching the Utmost Emptiness”</h3>
+          <p class="obj-zh">致虚极也 · 手写书法</p>
+          <p class="obj-desc">Chapter 16 of the silk text, brushed by hand and mounted on archival paper. One of a series.</p>
+        </div>
+      </a>
+
+      <a class="obj-card" href="#">
+        <div class="obj-media">
+          <img src="assets/sanhe-wood.jpg" alt="Three-harmony wooden ritual plaque">
+          <span class="obj-price">$45</span>
+        </div>
+        <div class="obj-body">
+          <div class="obj-cat">Ritual objects</div>
+          <h3 class="obj-name">Three Harmonies Wooden Plaque</h3>
+          <p class="obj-zh">三合木局 · 桃木符牌</p>
+          <p class="obj-desc">Wood, ink and vermilion only. Nine pieces in the wood bureau tradition — chosen by your birth elements.</p>
+        </div>
+      </a>
+    </div>
+
+    <div style="margin-top:64px" class="obj-grid">
+      <a class="obj-card" href="#">
+        <div class="obj-media">
+          <img src="assets/tianguan.jpg" alt="Heavenly Official blessing ornament">
+          <span class="obj-price">from $69</span>
+        </div>
+        <div class="obj-body">
+          <div class="obj-cat">Home &amp; altar</div>
+          <h3 class="obj-name">Heavenly Official Blessing</h3>
+          <p class="obj-zh">天官赐福 · 风水摆件</p>
+          <p class="obj-desc">Placed for the first lunar month and kept for the year. Brass and enamel on a hardwood stand.</p>
+        </div>
+      </a>
+
+      <a class="obj-card" href="#">
+        <div class="obj-media">
+          <img src="assets/dao-de-jing-book.jpg" alt="The Dao De Jing silk manuscript edition">
+          <span class="obj-price">$32</span>
+        </div>
+        <div class="obj-body">
+          <div class="obj-cat">Books</div>
+          <h3 class="obj-name">The Dao De Jing, in 81 Chapters</h3>
+          <p class="obj-zh">帛书德道经注释</p>
+          <p class="obj-desc">The silk manuscript, with a facing English translation and plain-language commentary. 320 pages.</p>
+        </div>
+      </a>
+
+      <a class="obj-card" href="#">
+        <div class="obj-media">
+          <img src="assets/lightning-wood.jpg" alt="Lightning-struck jujube wood amulet">
+          <span class="obj-price">$76</span>
+        </div>
+        <div class="obj-body">
+          <div class="obj-cat">Talisman objects</div>
+          <h3 class="obj-name">Lightning-Struck Jujube Wood</h3>
+          <p class="obj-zh">雷击原木 · 护身符木</p>
+          <p class="obj-desc">Wood struck by lightning, as the old texts say it should be. Certificate of origin enclosed.</p>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="sec practice" id="practice">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow">Practice · 道之术</div>
+        <h2>Read a chapter.<br>Then live the week.</h2>
+      </div>
+      <p class="lead">Every chapter of the <em>Dao De Jing</em> is a prompt, not a lecture. We pair the text with a weekly practice and a set of objects that make it easier to keep.</p>
+    </div>
+
+    <div class="practice-grid">
+      <div class="chapter-card">
+        <div class="num">Chapter 12</div>
+        <h3>The Way of the Sage in the World</h3>
+        <div class="zh">道 法 自 然</div>
+        <blockquote>“The sage manages affairs without doing. He acts without assuming credit for his deeds. He is content with the way things are, without ever being attached to it.”</blockquote>
+        <p class="trans">Note the translation is deliberately awkward in places. That is the silk text's own rhythm: it was written to be read aloud, two thousand years before anyone decided Daoism should sound elegant.</p>
+        <div class="chapter-foot">
+          <span>Objects for this chapter · 3</span>
+          <a href="#">Read chapter 12 →</a>
+        </div>
+      </div>
+
+      <div class="practice-side">
+        <div>
+          <div class="eyebrow" style="margin-bottom:14px">Also in the Classics</div>
+          <div class="hex-list">
+            <div class="hex-row"><b>☰ The Creative</b><span class="zh">乾</span></div>
+            <div class="hex-row"><b>☷ The Receptive</b><span class="zh">坤</span></div>
+            <div class="hex-row"><b>☵ The Abysmal</b><span class="zh">坎</span></div>
+            <div class="hex-row"><b>☲ The Clinging</b><span class="zh">離</span></div>
+            <div class="hex-row"><b>☴ The Gentle</b><span class="zh">巽</span></div>
+            <div class="hex-row"><b>☶ The Reedy</b><span class="zh">艮</span></div>
+          </div>
+        </div>
+        <div class="sub-card">
+          <h4>One hexagram, every Sunday.</h4>
+          <p>The classical reading for the week, with a short commentary and one object that carries the same idea. Free, no card required.</p>
+          <div class="sub-input">
+            <input type="email" placeholder="your@email.com">
+            <button>Subscribe</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec trace" id="traceability">
+  <div class="wrap trace-grid">
+    <div>
+      <div class="eyebrow">Traceability</div>
+      <h2 style="font-family:var(--serif);font-weight:300;font-size:clamp(1.9rem,3.4vw,2.8rem);line-height:1.14;margin-bottom:20px">How to know<br>what you're holding.</h2>
+      <p class="lead" style="font-size:14.5px;color:#4A443C;line-height:1.8;margin-bottom:26px">Most sellers of Daoist objects online will not tell you where the material came from, what the metal contains, or who consecrated it. We publish it on every product page — because this is how you tell handwork from manufacturing.</p>
+      <ul>
+        <li>Workshop and maker named, with region of origin</li>
+        <li>Material declared in full — species, alloy, finish</li>
+        <li>ISO 17025 laboratory report number, viewable</li>
+        <li>CITES appendix status stated plainly on wooden and resin pieces</li>
+        <li>Consecration certificate number, validatable by lineage</li>
+      </ul>
+      <a class="link-more" href="#">Read our standards →</a>
+    </div>
+    <div class="trace-list">
+      <div class="trace-cell">
+        <div class="k">Laboratory</div>
+        <div class="v">SGS<small>ISO/IEC 17025 · heavy metals, EN migration</small></div>
+      </div>
+      <div class="trace-cell">
+        <div class="k">Report number</div>
+        <div class="v">SGS-24-1187<small>Viewable on the product page before purchase</small></div>
+      </div>
+      <div class="trace-cell">
+        <div class="k">Consecration</div>
+        <div class="v">Cert. LHM-0436<small>Issued by the Longhu Mountain line</small></div>
+      </div>
+      <div class="trace-cell">
+        <div class="k">CITES status</div>
+        <div class="v">Declared<small>Appendix II species carry export certificates</small></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="journal">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <div class="eyebrow">Journal · 道之美</div>
+        <h2>Reading the Way<br><em>in ordinary life.</em></h2>
+      </div>
+      <a class="link-more" href="#">All entries →</a>
+    </div>
+    <div class="journal-grid">
+      <a class="journal-card" href="#">
+        <div class="journal-media"><img src="assets/calligraphy-zhixu.jpg" alt=""></div>
+        <div class="journal-meta">Manuscripts · 6 min</div>
+        <h4>Why the silk text is harder — and truer — than the popular version</h4>
+        <p>The received <em>Dao De Jing</em> was edited into smoothness for two thousand years. That is exactly what makes it less useful.</p>
+      </a>
+      <a class="journal-card" href="#">
+        <div class="journal-media"><img src="assets/lightning-wood.jpg" alt=""></div>
+        <div class="journal-meta">Practice · 4 min</div>
+        <h4>What “wu wei” actually asks of a working person</h4>
+        <p>Not passivity. A description of effort that does not waste itself.</p>
+      </a>
+      <a class="journal-card" href="#">
+        <div class="journal-media"><img src="assets/cinnabar-bracelet.jpg" alt=""></div>
+        <div class="journal-meta">Materials · 5 min</div>
+        <h4>Cinnabar, mercury, and how to read a safety report</h4>
+        <p>Why we seal it in silver, why we don't sell it to wear, and what the assay numbers mean.</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="sec faq">
+  <div class="wrap faq-grid">
+    <div class="faq-side">
+      <div class="eyebrow" style="margin-bottom:16px">Before you order</div>
+      <h2>Questions we get<br>asked most.</h2>
+      <p>If something isn't covered here, write to us. A person answers, usually within a day.</p>
+      <div class="contact-box">
+        <p><strong>Beijing studio</strong><br>Monday to Saturday, 10:00–19:00 CST<br>Response within one business day.</p>
+        <a href="#">hello@zhenhesheng.com</a>
+      </div>
+    </div>
+    <div class="faq-list" id="faqList">
+      <div class="faq-item">
+        <button class="faq-q">Are the objects actually consecrated, or is that marketing?</button>
+        <div class="faq-a">Each ritual object carries a certificate number issued by the lineage that prepared it, and the name of the practitioner. The certificate describes a specific rite and a specific date. We publish the number on the product page so it can be checked. Where an object is not ritually prepared, we say so plainly rather than implying it.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">What arrives, and how long does it take?</button>
+        <div class="faq-a">Objects ship from Beijing, insured, with tracking. US delivery runs 7–15 days; UK, Canada and EU 9–18 days. Shipping is free on US orders over $60. Orders under $60 pay a flat $12 at checkout, so the price you see is the price you pay — duties and taxes are settled at checkout, never collected on delivery.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Is cinnabar safe to wear?</button>
+        <div class="faq-a">Natural cinnabar contains mercury sulfide, and the EU restricts mercury in jewellery to zero. We therefore do not sell cinnabar as something to wear against the skin. Our cinnabar pieces are sealed inside a silver cage or mounted for display, and each ships with an ISO 17025 heavy-metal assay report you can read before buying. If you want a piece for daily wear, we will recommend an alternative instead.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Do you ship wood and resin internationally?</button>
+        <div class="faq-a">Some species — agarwood, sandalwood, rosewood — are listed under CITES Appendix II, including when plantation-grown, so we can only ship them with the export certificate that accompanies the material. Every wooden product page states its CITES status before you order. If a piece cannot be certified, it is not listed.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Are these objects appropriate as a gift for someone who isn't Chinese?</button>
+        <div class="faq-a">Yes. Tea ware, incense and desk objects are used across East Asia and are not tied to a single religious setting. Each order includes a short English card explaining the object's origin and what it is traditionally used for, so it can be given without explanation.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Do you offer divination readings?</button>
+        <div class="faq-a">We do not sell paid readings online. Fortune-telling for payment is restricted by law in a number of US states and we are not licensed there. We publish the classical texts, the weekly hexagram, and the study sessions in Beijing — those are open to everyone.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">What is your returns policy?</button>
+        <div class="faq-a">Thirty days from delivery for anything unworn, unused and in its original packaging, and we cover the return shipping. If an object arrives damaged, send a photo and we replace it or refund in full — you do not need to return it. Refunds are issued to the original payment method within 5 business days.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Do you offer a membership or the study sessions online?</button>
+        <div class="faq-a">The Beijing study sessions run weekly and are open to anyone who can join a video call. Members receive the Sunday hexagram, chapter commentaries ahead of publication, and first access to limited objects. Membership is $19/month, cancel any time.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <div class="brand" style="margin-bottom:4px">
+          <span class="brand-mark">☯</span>
+          <span>
+            <span class="brand-name">ZHEN HE SHENG</span>
+            <span class="brand-sub">Dao Culture &amp; Living</span>
+          </span>
+        </div>
+        <p>A Beijing studio working with the Mawangdui silk manuscript tradition. Objects, texts and practice — carried to wherever someone wants to begin.</p>
+        <a class="cn-link" href="#">中文站 zhenhesheng.cn →</a>
+      </div>
+      <div class="foot-col">
+        <h5>Shop</h5>
+        <a href="#">All objects</a>
+        <a href="#">Tea ware</a>
+        <a href="#">Incense &amp; ritual</a>
+        <a href="#">Writing &amp; desk</a>
+        <a href="#">Books</a>
+        <a href="#">Gift boxes</a>
+      </div>
+      <div class="foot-col">
+        <h5>Learn</h5>
+        <a href="#">The Dao De Jing</a>
+        <a href="#">Sixty-four hexagrams</a>
+        <a href="#">Four Pillars</a>
+        <a href="#">Weekly study sessions</a>
+        <a href="#">Journal</a>
+      </div>
+      <div class="foot-col">
+        <h5>Support</h5>
+        <a href="#">Contact</a>
+        <a href="#">Shipping &amp; duties</a>
+        <a href="#">Returns</a>
+        <a href="#">Traceability standards</a>
+        <a href="#">Privacy &amp; terms</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <p>© 2026 Zhen He Sheng · Beijing, China · <a href="#" style="border-bottom:1px solid #4A443C">Imprint &amp; legal notice</a> · Registered in Hong Kong SAR</p>
+      <div class="pay-row">
+        <span class="pay-badge">VISA</span>
+        <span class="pay-badge">MASTERCARD</span>
+        <span class="pay-badge">AMEX</span>
+        <span class="pay-badge">APPLE PAY</span>
+        <span class="pay-badge">PAYPAL</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<div class="note">
+  <b>首页视觉稿 v1</b>
+  宣纸白 × 墨黑 × 朱砂，Cormorant Garamond + Inter。真实商品实拍均取自 zhs-store 现有素材；首屏图、产品图为示意位，正式版需按 5.4 摄影规范补拍场景图。
+</div>
+
+<script>
+document.querySelectorAll('.faq-q').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var item=btn.parentElement;
+    var wasOpen=item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(function(i){i.classList.remove('open')});
+    if(!wasOpen){item.classList.add('open')}
+  });
+});
+</script>
+</body>
+</html>
