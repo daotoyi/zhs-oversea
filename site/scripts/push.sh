@@ -102,7 +102,12 @@ if ! PUSH_OUT="$(git push origin main 2>&1)"; then
   echo "✗ 推送未完成 —— 已在本地记账，下次迭代会自动补推"
   exit 1
 fi
-echo "$PUSH_OUT" | grep -E '^\s+\S+\.\.\S+' | sed 's/^/    /' || echo "    (已是最新)"
+# 注意：用 [[:space:]] 而非 \s —— macOS 自带 BSD grep 不认 \s
+if echo "$PUSH_OUT" | grep -qE '[[:space:]][0-9a-f]+\.\.[0-9a-f]+'; then
+  echo "$PUSH_OUT" | grep -E '[0-9a-f]+\.\.[0-9a-f]+' | sed 's/^/    /'
+else
+  echo "    (已是最新，无需推送)"
+fi
 
 if [ -n "$LATEST_TAG" ]; then
   echo "→ 推送最新 tag $LATEST_TAG"
@@ -116,7 +121,6 @@ if [ -n "$LATEST_TAG" ]; then
   fi
   echo "$TAG_OUT" | grep -E 'new tag|forced update|up-to-date' | sed 's/^/    /' || true
 fi
-
 # 其余本地 tag 也顺手补齐（历史欠账 / 新打的非最新 tag）
 OTHERS="$(echo "$TAG_LIST" | tail -n +2)"
 if [ -n "$OTHERS" ]; then
