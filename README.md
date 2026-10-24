@@ -27,7 +27,10 @@ Dao culture oversea — 道家文化出海站
     ├── src/components/       组件
     ├── src/lib/              商品数据、Stripe、运费、购物车、订单
     ├── src/data/             经典内容（章节 / 卦象 / 文章）
-    └── scripts/deploy.sh     一键部署
+    └── scripts/
+        ├── deploy.sh         一键部署（含推送）
+        ├── push.sh           推送 GitHub（失败记账 / 自动补推）
+        └── bump-version.sh   版本号递增
 ```
 
 ## 本地开发
@@ -39,21 +42,34 @@ cp .env.example .env.production   # 填入 Stripe 密钥
 npm run dev
 ```
 
-## 版本号（每次修改必做）
+## 版本号与推送（每次修改必做）
 
-**约定：默认迭代第三位版本号（patch）。每次代码修改完成后，执行一次递增。**
+**约定：默认迭代第三位版本号（patch）。每次代码修改完成后，执行一次递增，并推送 GitHub。**
 
 ```bash
 cd site
-npm run version:push     # 0.0.2 → 0.0.3，自动 commit + 打 tag + 推送 GitHub
+npm run version:bump     # 0.0.2 → 0.0.3，commit + 打 tag + 推送（推送现在已是默认行为）
 ```
 
-- `version:push` —— 第三位 +1，推送 commit 与 tag（默认用这个）
-- `version:bump`  —— 同上，但不推送（仅本地 commit + tag）
 - 需要跳位时：`bash scripts/bump-version.sh minor`（第二位）或 `major`（第一位）
+- 临时不想推送：`bash scripts/bump-version.sh --no-push`
 
 版本号唯一来源是 `site/package.json` 的 `version` 字段，tag 形如 `v0.0.3`。
-流程：改代码 → 构建验证 → 部署 → `npm run version:push`。
+流程：改代码 → 提交 → `npm run version:bump` → 构建 → 部署（部署成功会自动再推一次）。
+
+### 推送失败怎么办（网络不稳时）
+
+推送失败**不阻塞**本地开发和部署，会自动记账，下次迭代补推：
+
+```bash
+npm run push           # 补推欠账 + 推送 main 与最新 tag；成功则自动清账
+npm run push:status    # 只看欠账
+npm run push -- --clear # 确认远端已一致时手工清账
+```
+
+- 欠账写在本机 `.workbuddy/pending-push.md`（含时间 / HEAD / tag / 失败原因），另有 `.workbuddy/push-history.log` 记录每次成败
+- `version:bump` 和 `deploy.sh` 都会调用 `site/scripts/push.sh`，所以「下次迭代」会自动重试，不需要记着手动补
+- 推送前会清掉 `HTTP(S)_PROXY`：沙箱代理会干扰 git 的 HTTPS 请求
 
 ## 部署
 
@@ -71,7 +87,8 @@ bash scripts/deploy.sh # 构建→打包→备份→上传→重启→清缓存�
 
 | 项 | 约定 |
 |---|---|
-| 版本 | 语义化版本，当前 **v0.0.2**；每次修改递增第三位，见上文「版本号」 |
+| 版本 | 语义化版本，当前 **v0.0.8**；每次修改递增第三位，见上文「版本号与推送」 |
+| 推送 | 每次更新完都推 GitHub；网络失败本地记账（`.workbuddy/pending-push.md`），下次迭代自动补推 |
 | 交易 | 实物走标准 Stripe + Stripe Tax；数字产品走 Stripe Managed Payments（MoR） |
 | 结汇 | Airwallex 收单 → 万里汇结汇回大陆 |
 | 合规 | 朱砂只做封闭封装展示级；CITES 物种逐 SKU 存证；全站无功效宣称 |
