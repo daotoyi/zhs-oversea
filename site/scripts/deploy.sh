@@ -120,3 +120,12 @@ curl -s --noproxy '*' -o /dev/null -w "   域名 https: HTTP %{http_code}\n" -m 
 
 echo
 echo "✓ 部署完成 —— 保留最近备份于 $BACKUP_DIR"
+
+# 约定：每次更新完都推送 GitHub。推送失败不阻断部署（线上已经起来了），
+# 由 push.sh 记账到 .workbuddy/pending-push.md，下次迭代自动补推。
+echo
+if bash "$SITE/scripts/push.sh"; then
+  echo "✓ 源码已同步 GitHub"
+else
+  echo "⚠ 源码未推送 —— 已在本地记账，下次迭代会自动补推（npm run push 可手动重试）"
+fi

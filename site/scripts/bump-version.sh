@@ -23,12 +23,13 @@ REPO="$(cd "$SITE/.." && pwd)"             # .../zhs-oversea
 PKG="$SITE/package.json"
 
 PART="patch"   # 默认：第三位
-PUSH=0
+PUSH=1         # 默认推送（约定：每次更新完都推；失败则本地记账，下次补推）
 for arg in "$@"; do
   case "$arg" in
     --push) PUSH=1 ;;
+    --no-push) PUSH=0 ;;
     major|minor|patch) PART="$arg" ;;
-    *) echo "未知参数: $arg（可用：patch|minor|major|--push）" >&2; exit 1 ;;
+    *) echo "未知参数: $arg（可用：patch|minor|major|--push|--no-push）" >&2; exit 1 ;;
   esac
 done
 
@@ -61,11 +62,12 @@ git tag -a "v${NEW}" -m "v${NEW}"
 echo "✓ 本地已提交并打 tag v${NEW}"
 
 if [ "$PUSH" = "1" ]; then
-  # 沙箱代理会干扰 git POST，必须清掉
-  unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy 2>/dev/null || true
-  GIT_TERMINAL_PROMPT=0 git push origin main
-  GIT_TERMINAL_PROMPT=0 git push origin "v${NEW}"
-  echo "✓ 已推送 GitHub（main + v${NEW}）"
+  # 统一走 push.sh：会先补推历史欠账，失败则登记到 .workbuddy/pending-push.md
+  if bash "$SITE/scripts/push.sh"; then
+    echo "✓ 已推送 GitHub（main + v${NEW}）"
+  else
+    echo "⚠ 推送失败 —— 已在本地记账，下次迭代（bump/deploy）会自动补推"
+  fi
 else
-  echo "  推送 GitHub：npm run version:push（或 bash scripts/bump-version.sh --push）"
+  echo "  本次跳过推送。手动推送：npm run push"
 fi

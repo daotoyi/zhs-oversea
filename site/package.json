@@ -12,6 +12,8 @@
     "stripe:listen": "stripe listen --forward-to localhost:3000/api/webhooks/stripe",
     "seed:products": "node scripts/sync-products.mjs",
     "deploy": "bash scripts/deploy.sh",
+    "push": "bash scripts/push.sh",
+    "push:status": "bash scripts/push.sh --status",
     "version:bump": "bash scripts/bump-version.sh",
     "version:push": "bash scripts/bump-version.sh --push"
   },
