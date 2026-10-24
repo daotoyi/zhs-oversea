@@ -8,12 +8,15 @@ import { formatUsd } from '@/lib/shipping';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
 
-export const metadata: Metadata = {
-  title: 'Practice — study sessions & membership',
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale } = await getUi();
+  return {
+    title: locale === 'en' ? 'Practice — study sessions & membership' : '修习 — 讲论与会员',
   description:
     'The Sunday hexagram, the weekly study sessions in Beijing, and the membership that brings both to you.',
   alternates: { canonical: '/practice' },
-};
+  }
+}
 
 const MEMBER_EN = [
   'The Sunday hexagram, with commentary',

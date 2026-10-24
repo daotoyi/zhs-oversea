@@ -4,13 +4,20 @@ import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { getNavStrings, getFooterStrings, getUi } from '@/lib/i18n';
 import { HEXAGRAMS } from '@/data/hexagrams';
+import { HEXAGRAMS_ZH } from '@/lib/i18n/zh-hans-content';
 import { toTraditional } from '@/lib/i18n/convert';
 
-export const metadata: Metadata = {
-  title: 'The Sixty-Four Hexagrams',
-  description: 'The Yijing book of changes, hexagram by hexagram, with the classical image and reading.',
-  alternates: { canonical: '/classics/yijing' },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale } = await getUi();
+  return {
+    title: locale === 'en' ? 'The Sixty-Four Hexagrams' : '《周易》六十四卦',
+    description:
+      locale === 'en'
+        ? 'The Yijing book of changes, hexagram by hexagram, with the classical image and reading.'
+        : '把《易经》当作活的文本读，逐卦含古典象意与读法。',
+    alternates: { canonical: '/classics/yijing' },
+  };
+}
 
 export default async function YijingIndex() {
   const { locale, t } = await getUi();
@@ -42,7 +49,7 @@ export default async function YijingIndex() {
                 <Link key={k} href={`/classics/yijing/${k}`} className="hex-cell">
                   <span className="hex-symbol">{h.symbol}</span>
                   <span className="hex-zh cjk">{h.zh}</span>
-                  <span className="hex-en serif">{locale === 'en' ? h.en : toTraditional(h.en)}</span>
+                  <span className="hex-en serif">{locale === 'en' ? h.en : (HEXAGRAMS_ZH[k]?.en ?? h.en)}</span>
                 </Link>
               );
             })}

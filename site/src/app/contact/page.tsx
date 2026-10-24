@@ -2,67 +2,76 @@ import type { Metadata } from 'next';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { getNavStrings, getFooterStrings, getTrustItems, getUi } from '@/lib/i18n';
+import { UI_ZH } from '@/lib/i18n/zh-hans';
 
-export const metadata: Metadata = {
-  title: 'Contact',
-  description: 'Reach the Zhen He Sheng studio in Beijing. We answer written enquiries within one business day.',
-  alternates: { canonical: '/contact' },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale } = await getUi();
+  return {
+    title: locale === 'en' ? 'Contact' : '联系',
+    description:
+      locale === 'en'
+        ? 'Reach the Zhen He Sheng studio in Beijing. We answer written enquiries within one business day.'
+        : '联系北京真和盛作坊。书面来函一个工作日内必复。',
+    alternates: { canonical: '/contact' },
+  };
+}
 
 export default async function ContactPage() {
   const { locale, t } = await getUi();
   const navStrings = await getNavStrings();
   const footerStrings = await getFooterStrings();
+  const h = UI_ZH.contactPage;
+
   return (
     <>
       <Nav strings={navStrings} />
       <section className="sec" style={{ paddingTop: 64 }}>
         <div className="wrap">
           <div className="eyebrow" style={{ marginBottom: 18 }}>
-            Contact
+            {t('Contact', h.eyebrow)}
           </div>
           <h1
             className="serif"
             style={{ fontWeight: 300, fontSize: 'clamp(2rem, 4vw, 3rem)', lineHeight: 1.1, marginBottom: 32 }}
           >
-            写信到作坊。
+            {t('Write to the studio.', h.h1)}
           </h1>
           <div className="prose">
-            <p>
-              If something about an object is unclear — its size, its material, whether it suits a
-              particular use — write and ask. We would rather answer before you order than after.
-            </p>
-            <h2>邮件</h2>
+            <p>{t(
+              'If something about an object is unclear — its size, its material, whether it suits a particular use — write and ask. We would rather answer before you order than after.',
+              h.lead
+            )}</p>
+            <h2>{t('Email', h.emailH)}</h2>
             <p>
               <a href="mailto:hello@zhenhesheng.com" style={{ color: 'var(--cinnabar)' }}>
                 hello@zhenhesheng.com
               </a>
               <br />
-              周一至周六，一个工作日内回复。
+              {t('Response within one business day, Monday to Saturday.', h.emailNote)}
             </p>
-            <h2>作坊地址</h2>
+            <h2>{t('Studio address', h.addrH)}</h2>
             <p>
-              Zhen He Sheng
+              {t('Zhen He Sheng', h.addr1)}
               <br />
-              Tongzhou, Beijing, China
+              {t('Tongzhou, Beijing, China', h.addr2)}
               <br />
-              Registered in Hong Kong SAR — company details on the{' '}
+              {t('Registered in Hong Kong SAR — company details on the ', h.addr3a)}
               <a href="/policies/imprint" style={{ color: 'var(--cinnabar)' }}>
-                imprint page
+                {t('imprint page', h.addr3Link)}
               </a>
-              .
+              {t('.', h.addr3b)}
             </p>
-            <h2>写信之前</h2>
+            <h2>{t('Before you write', h.beforeH)}</h2>
             <p>
-              Shipping times, duties and returns are all covered on the{' '}
+              {t('Shipping times, duties and returns are all covered on the ', h.beforePa)}
               <a href="/policies/shipping" style={{ color: 'var(--cinnabar)' }}>
-                shipping page
-              </a>{' '}
-              and the{' '}
-              <a href="/policies/returns" style={{ color: 'var(--cinnabar)' }}>
-                returns page
+                {t('shipping page', h.beforeShipLink)}
               </a>
-              . Most questions are already answered there.
+              {t(' and the ', h.beforeMid)}
+              <a href="/policies/returns" style={{ color: 'var(--cinnabar)' }}>
+                {t('returns page', h.beforeReturnLink)}
+              </a>
+              {t('. Most questions are already answered there.', h.beforePb)}
             </p>
           </div>
         </div>

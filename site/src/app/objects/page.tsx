@@ -9,12 +9,15 @@ import { getNavStrings, getFooterStrings, getTrustItems, getUi, localizeProduct 
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
 
-export const metadata: Metadata = {
-  title: 'Objects — Dao Culture & Living',
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale } = await getUi();
+  return {
+    title: locale === 'en' ? 'Objects — Dao Culture & Living' : '器物 — 道之器',
   description:
     'Tea ware, incense, writing desk and ritual objects. Made by named hands, in named workshops, with the material declared.',
   alternates: { canonical: '/objects' },
-};
+  }
+}
 
 const CATEGORY_EN: Record<string, string> = {
   'tea-ware': 'Tea ware',

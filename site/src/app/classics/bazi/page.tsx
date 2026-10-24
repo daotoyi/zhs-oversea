@@ -3,13 +3,19 @@ import Link from 'next/link';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { getNavStrings, getFooterStrings, getTrustItems, getUi } from '@/lib/i18n';
+import { UI_ZH } from '@/lib/i18n/zh-hans';
 
-export const metadata: Metadata = {
-  title: 'The Four Pillars — an introduction',
-  description:
-    'A forty-part introduction to BaZi: the ten heavenly stems, twelve earthly branches, how a chart is built, and what the ten gods mean.',
-  alternates: { canonical: '/classics/bazi' },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale } = await getUi();
+  return {
+    title: locale === 'en' ? 'The Four Pillars — an introduction' : '四柱八字 — 入门',
+    description:
+      locale === 'en'
+        ? 'A forty-part introduction to BaZi: the ten heavenly stems, twelve earthly branches, how a chart is built, and what the ten gods mean.'
+        : '一部四十篇的系统入门：十天干与十二地支、如何排盘、以及十神的含义。',
+    alternates: { canonical: '/classics/bazi' },
+  };
+}
 
 const PARTS = [
   { n: 1, title: 'What a chart actually is', zh: '四柱' },
@@ -28,38 +34,45 @@ export default async function BaziPage() {
   const { locale, t } = await getUi();
   const navStrings = await getNavStrings();
   const footerStrings = await getFooterStrings();
+  const h = UI_ZH.baziPage;
+
   return (
     <>
       <Nav strings={navStrings} />
       <section className="sec" style={{ paddingTop: 56 }}>
         <div className="wrap">
           <Link href="/classics" className="eyebrow" style={{ display: 'inline-block', marginBottom: 28 }}>
-            ← The Classics
+            {t('← The Classics', h.back)}
           </Link>
           <h1 className="serif" style={{ fontWeight: 300, fontSize: 'clamp(2rem, 4.4vw, 3.2rem)', lineHeight: 1.1, marginBottom: 18 }}>
-            The Four Pillars
+            {t('The Four Pillars', h.h1)}
           </h1>
           <p style={{ fontSize: 15, color: 'var(--ash)', maxWidth: 600, lineHeight: 1.8, marginBottom: 20 }}>
-            A forty-part introduction to the system: the ten heavenly stems and twelve earthly branches,
-            how a chart is built from a birth date and hour, and what the ten gods mean when they appear.
-            Written for readers who have never seen a chart before.
+            {t(
+              'A forty-part introduction to the system: the ten heavenly stems and twelve earthly branches, how a chart is built from a birth date and hour, and what the ten gods mean when they appear. Written for readers who have never seen a chart before.',
+              h.lead
+            )}
           </p>
           <p style={{ fontSize: 13.5, color: 'var(--ash)', maxWidth: 600, lineHeight: 1.8, marginBottom: 48 }}>
-            We publish the system as a subject of study. We do not sell readings, and we do not claim
-            that a chart determines what a person will do.
+            {t(
+              'We publish the system as a subject of study. We do not sell readings, and we do not claim that a chart determines what a person will do.',
+              h.note
+            )}
           </p>
 
           <div className="chapter-grid">
             {PARTS.map((p) => (
               <div key={p.n} className="chapter-cell">
                 <span className="chapter-n">{String(p.n).padStart(2, '0')}</span>
-                <span className="chapter-title serif">{p.title}</span>
+                <span className="chapter-title serif">
+                  {locale === 'en' ? p.title : h.partTitles[p.n - 1]}
+                </span>
                 <span className="chapter-zh cjk">{p.zh}</span>
               </div>
             ))}
           </div>
           <p style={{ marginTop: 24, fontSize: 12.5, color: 'var(--ash)' }}>
-            Full text publishing monthly. Members receive each part as it is written.
+            {t('Full text publishing monthly. Members receive each part as it is written.', h.monthlyNote)}
           </p>
         </div>
       </section>

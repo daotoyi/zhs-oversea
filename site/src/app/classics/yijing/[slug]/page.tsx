@@ -5,6 +5,7 @@ import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { getNavStrings, getFooterStrings, getUi, localizeHexagram } from '@/lib/i18n';
 import { HEXAGRAMS } from '@/data/hexagrams';
+import { HEXAGRAMS_ZH } from '@/lib/i18n/zh-hans-content';
 import { toTraditional } from '@/lib/i18n/convert';
 
 export function generateStaticParams() {
@@ -13,11 +14,20 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
+  const { locale } = await getUi();
   const h = HEXAGRAMS[slug];
   if (!h) return { title: 'Hexagram not found' };
+  const z = HEXAGRAMS_ZH[slug];
+  const name = locale === 'en' ? h.en : (z?.en ?? h.en);
   return {
-    title: `${h.en} — Hexagram ${h.zh}`,
-    description: `${h.en} (${h.zh}), ${h.image}. Reading the hexagram from the classical commentary.`,
+    title:
+      locale === 'en'
+        ? `${h.en} — Hexagram ${h.zh}`
+        : `${name} — 周易第${h.zh}卦`,
+    description:
+      locale === 'en'
+        ? `${h.en} (${h.zh}), ${h.image}. Reading the hexagram from the classical commentary.`
+        : `${name}（${h.zh}），${h.image}。据古典注文读此卦。`,
     alternates: { canonical: `/classics/yijing/${slug}` },
   };
 }

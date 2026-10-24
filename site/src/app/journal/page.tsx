@@ -7,12 +7,15 @@ import { POSTS } from '@/data/posts';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
 
-export const metadata: Metadata = {
-  title: 'Journal',
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale } = await getUi();
+  return {
+    title: locale === 'en' ? 'Journal' : '札记',
   description:
     'Reading the Way in ordinary life — manuscripts, materials, and the daily practice of a Beijing studio.',
   alternates: { canonical: '/journal' },
-};
+  }
+}
 
 export default async function JournalPage() {
   const { locale, t } = await getUi();
@@ -48,7 +51,7 @@ export default async function JournalPage() {
                   <img src={e.image} alt="" />
                 </div>
                 <div className="journal-meta">
-                  {locale === 'en' ? e.category : toTraditional(e.category)} · {e.minutes} min
+                  {e.category} · {t(`${e.minutes} min`, `${e.minutes} 分钟`)}
                 </div>
                 <h3 className="serif">{e.title}</h3>
                 <p>{e.body[0]}</p>

@@ -7,11 +7,14 @@ import { getLocale } from '@/lib/i18n/server';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
 
-export const metadata: Metadata = {
-  title: 'Your cart',
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale } = await getUi();
+  return {
+    title: locale === 'en' ? 'Your cart' : '购物车',
   description: 'Your Zhen He Sheng order.',
   robots: { index: false, follow: false },
-};
+  }
+}
 
 export default async function CartPage() {
   const { t } = await getUi();

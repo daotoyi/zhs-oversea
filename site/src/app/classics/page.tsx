@@ -4,16 +4,22 @@ import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { getNavStrings, getFooterStrings, getUi } from '@/lib/i18n';
 import { CHAPTERS } from '@/data/chapters';
+import { CHAPTERS_ZH } from '@/lib/i18n/zh-hans-content';
 import { HEXAGRAMS } from '@/data/hexagrams';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
 
-export const metadata: Metadata = {
-  title: 'The Classics',
-  description:
-    'The Mawangdui silk Dao De Jing in 81 chapters, the sixty-four hexagrams of the Yijing, and the Four Pillars of Destiny.',
-  alternates: { canonical: '/classics' },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale } = await getUi();
+  return {
+    title: locale === 'en' ? 'The Classics' : '经典',
+    description:
+      locale === 'en'
+        ? 'The Mawangdui silk Dao De Jing in 81 chapters, the sixty-four hexagrams of the Yijing, and the Four Pillars of Destiny.'
+        : '马王堆帛书《德道经》八十一章、《周易》六十四卦，与四柱八字。',
+    alternates: { canonical: '/classics' },
+  };
+}
 
 const HEX_ZH: Record<string, string> = {
   qian: '乾', kun: '坤', kan: '坎', li: '離', xun: '巽', gen: '艮', zhen: '震', dui: '兌',
@@ -92,7 +98,7 @@ export default async function ClassicsPage() {
               {chapterData.map((c) => (
                 <Link key={c.n} href={`/classics/dao-de-jing/${c.n}`} className="chapter-cell">
                   <span className="chapter-n">{String(c.n).padStart(2, '0')}</span>
-                  <span className="chapter-title serif">{locale === 'en' ? c.title : Z(c.title)}</span>
+                  <span className="chapter-title serif">{locale === 'en' ? c.title : CHAPTERS_ZH[c.n].title}</span>
                   <span className="chapter-zh cjk">{c.zh}</span>
                 </Link>
               ))}

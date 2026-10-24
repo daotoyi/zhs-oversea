@@ -5,6 +5,7 @@ import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { getNavStrings, getFooterStrings, getUi, localizePost } from '@/lib/i18n';
 import { POSTS } from '@/data/posts';
+import { POSTS_ZH } from '@/lib/i18n/zh-hans-content';
 import { toTraditional } from '@/lib/i18n/convert';
 
 export function generateStaticParams() {
@@ -13,13 +14,17 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
+  const { locale } = await getUi();
   const post = POSTS[slug];
   if (!post) return { title: 'Entry not found' };
+  const z = POSTS_ZH[slug];
+  const title = locale === 'en' ? post.title : (z?.title ?? post.title);
+  const desc = locale === 'en' ? post.body[0] : (z?.body?.[0] ?? post.body[0]);
   return {
-    title: post.title,
-    description: post.body[0].slice(0, 155),
+    title,
+    description: desc.slice(0, 155),
     alternates: { canonical: `/journal/${slug}` },
-    openGraph: { type: 'article', title: post.title, images: [{ url: post.image }] },
+    openGraph: { type: 'article', title, images: [{ url: post.image }] },
   };
 }
 
@@ -42,7 +47,7 @@ export default async function JournalPost({ params }: { params: Promise<{ slug: 
             {t('← Journal', '← 札记')}
           </Link>
           <div className="journal-meta">
-            {locale === 'en' ? post.category : toTraditional(post.category)} · {post.minutes} min
+            {post.category} · {t(`${post.minutes} min`, `${post.minutes} 分钟`)}
           </div>
           <h1 className="serif" style={{ fontWeight: 300, fontSize: 'clamp(1.9rem, 3.8vw, 2.9rem)', lineHeight: 1.15, margin: '10px 0 32px' }}>
             {post.title}

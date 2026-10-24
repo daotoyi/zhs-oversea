@@ -6,10 +6,13 @@ import { getNavStrings, getFooterStrings, getUi } from '@/lib/i18n';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
 
-export const metadata: Metadata = {
-  title: 'Order confirmed',
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale } = await getUi();
+  return {
+    title: locale === 'en' ? 'Order confirmed' : '订单已确认',
   robots: { index: false, follow: false },
-};
+  }
+}
 
 export default async function CheckoutSuccessPage() {
   const { locale, t } = await getUi();

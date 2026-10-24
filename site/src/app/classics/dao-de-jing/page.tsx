@@ -7,12 +7,15 @@ import { CHAPTERS } from '@/data/chapters';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
 
-export const metadata: Metadata = {
-  title: 'The Dao De Jing — 81 chapters',
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale } = await getUi();
+  return {
+    title: locale === 'en' ? 'The Dao De Jing — 81 chapters' : '《德道经》 — 八十一章',
   description:
     'The Mawangdui silk manuscript of the Dao De Jing, translated into English chapter by chapter, with commentary and a weekly practice.',
   alternates: { canonical: '/classics/dao-de-jing' },
-};
+  }
+}
 
 export default async function DaoDeJingIndex() {
   const { locale, t } = await getUi();

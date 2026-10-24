@@ -128,6 +128,7 @@ export async function localizePost(post: JournalPost, slug: string): Promise<Jou
   if (!z) return post;
   return {
     ...post,
+    category: (zh(z.category, locale) as string) ?? post.category,
     title: (zh(z.title, locale) as string) ?? post.title,
     body: (zh(z.body, locale) as string[]) ?? post.body,
   };

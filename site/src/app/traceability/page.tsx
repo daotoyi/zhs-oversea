@@ -6,12 +6,15 @@ import { getNavStrings, getFooterStrings, getUi } from '@/lib/i18n';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
 
-export const metadata: Metadata = {
-  title: 'Traceability standards',
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale } = await getUi();
+  return {
+    title: locale === 'en' ? 'Traceability standards' : '溯源标准',
   description:
     'How we verify origin, materials, laboratory testing, CITES status and consecration — and how to check our claims.',
   alternates: { canonical: '/traceability' },
-};
+  }
+}
 
 const STANDARDS_EN = [
   { title: 'Origin', body: 'Every product names its workshop, its maker and the region it was made in. We do not sell through intermediaries we have not visited.' },

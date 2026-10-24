@@ -5,6 +5,7 @@ import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { getNavStrings, getFooterStrings, getUi, localizeChapter } from '@/lib/i18n';
 import { CHAPTERS } from '@/data/chapters';
+import { CHAPTERS_ZH } from '@/lib/i18n/zh-hans-content';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
 
@@ -14,11 +15,20 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ n: string }> }): Promise<Metadata> {
   const { n } = await params;
+  const { locale } = await getUi();
   const chapter = CHAPTERS[Number(n)];
   if (!chapter) return { title: 'Chapter not found' };
+  const z = CHAPTERS_ZH[Number(n)];
+  const title = locale === 'en' ? chapter.title : (z?.title ?? chapter.title);
   return {
-    title: `Dao De Jing Chapter ${n} — ${chapter.title}`,
-    description: `Chapter ${n} of the Mawangdui silk Dao De Jing: ${chapter.zh}. English text, commentary and a weekly practice.`,
+    title:
+      locale === 'en'
+        ? `Dao De Jing Chapter ${n} — ${chapter.title}`
+        : `《德道经》第${n}章 — ${title}`,
+    description:
+      locale === 'en'
+        ? `Chapter ${n} of the Mawangdui silk Dao De Jing: ${chapter.zh}. English text, commentary and a weekly practice.`
+        : `马王堆帛书《德道经》第${n}章：${chapter.zh}。原文、读法与本周功课。`,
     alternates: { canonical: `/classics/dao-de-jing/${n}` },
   };
 }

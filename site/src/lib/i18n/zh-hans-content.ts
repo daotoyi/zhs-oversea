@@ -311,8 +311,9 @@ export const HEXAGRAMS_ZH: Record<string, { en: string; reading: string }> = {
    札记
    ══════════════════════════════════════════════════ */
 
-export const POSTS_ZH: Record<string, { title: string; body: string[] }> = {
+export const POSTS_ZH: Record<string, { category: string; title: string; body: string[] }> = {
   'silk-text-vs-received-version': {
+    category: '文献',
     title: '为什么帛书更难读——也更真',
     body: [
       '一九七三年，马王堆的发掘者打开了一座封存约两千年的墓。随葬品中，有两卷写在我们自以为熟知的文字上的丝帛。',
@@ -323,6 +324,7 @@ export const POSTS_ZH: Record<string, { title: string; body: string[] }> = {
     ],
   },
   'wu-wei-for-working-people': {
+    category: '修习',
     title: '「无为」对一个上班的人到底要求什么',
     body: [
       '无为通常被译成「不行动」，听上去像劝人什么都不做。这读法舒服，但是错的。',
@@ -332,6 +334,7 @@ export const POSTS_ZH: Record<string, { title: string; body: string[] }> = {
     ],
   },
   'cinnabar-mercury-safety-report': {
+    category: '材料',
     title: '朱砂、汞，以及一份检测报告怎么读',
     body: [
       '朱砂是硫化汞。这句话是每一场关于它的诚实谈话的开头，也是我们不把朱砂作为贴身佩戴品出售的原因。',
@@ -341,6 +344,7 @@ export const POSTS_ZH: Record<string, { title: string; body: string[] }> = {
     ],
   },
   'choosing-a-teapot-that-lasts': {
+    category: '材料',
     title: '挑一把能用二十年的壶',
     body: [
       '两把看起来一样的壶，十年里的表现可以完全不同。差别在泥料与釉面。',
@@ -350,6 +354,7 @@ export const POSTS_ZH: Record<string, { title: string; body: string[] }> = {
     ],
   },
   'incense-as-measure-of-time': {
+    category: '修习',
     title: '在有钟表之前，香是计时的尺',
     body: [
       '机械钟之前，一炷香是一个时间单位。不是比喻——带刻度的香篆真的被用来计考试、计静坐时辰、计夜间轮值。',
@@ -358,6 +363,7 @@ export const POSTS_ZH: Record<string, { title: string; body: string[] }> = {
     ],
   },
   'writing-by-hand-at-work': {
+    category: '修习',
     title: '全职工作之余，怎么守住一件手写的功课',
     body: [
       '障碍不是时间。十五分钟，几乎人人都有。障碍是手写没有产出——没有可示人的东西，没有可发的成果，没有什么可为之辩解。',
