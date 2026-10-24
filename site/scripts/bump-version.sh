@@ -52,20 +52,20 @@ d.version = '$NEW';
 fs.writeFileSync(p, JSON.stringify(d, null, 2) + '\n');
 "
 
-echo "版本号: $OLD → $NEW（$PART）"
+echo "版本号: ${OLD} → ${NEW}（${PART}）"
 
 cd "$REPO"
 git add "$PKG"
-git commit -q -m "chore: bump version $OLD → $NEW"
-git tag -a "v$NEW" -m "v$NEW"
-echo "✓ 本地已提交并打 tag v$NEW"
+git commit -q -m "chore: bump version ${OLD} → ${NEW}"
+git tag -a "v${NEW}" -m "v${NEW}"
+echo "✓ 本地已提交并打 tag v${NEW}"
 
 if [ "$PUSH" = "1" ]; then
   # 沙箱代理会干扰 git POST，必须清掉
   unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy 2>/dev/null || true
   GIT_TERMINAL_PROMPT=0 git push origin main
-  GIT_TERMINAL_PROMPT=0 git push origin "v$NEW"
-  echo "✓ 已推送 GitHub（main + v$NEW）"
+  GIT_TERMINAL_PROMPT=0 git push origin "v${NEW}"
+  echo "✓ 已推送 GitHub（main + v${NEW}）"
 else
   echo "  推送 GitHub：npm run version:push（或 bash scripts/bump-version.sh --push）"
 fi

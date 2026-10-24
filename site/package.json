@@ -1,6 +1,6 @@
 {
   "name": "zhenhesheng-com",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "description": "Zhen He Sheng — Dao Culture & Living. Overseas storefront for zhenhesheng.com",
   "scripts": {
@@ -11,7 +11,9 @@
     "typecheck": "tsc --noEmit",
     "stripe:listen": "stripe listen --forward-to localhost:3000/api/webhooks/stripe",
     "seed:products": "node scripts/sync-products.mjs",
-    "deploy": "bash scripts/deploy.sh"
+    "deploy": "bash scripts/deploy.sh",
+    "version:bump": "bash scripts/bump-version.sh",
+    "version:push": "bash scripts/bump-version.sh --push"
   },
   "dependencies": {
     "next": "^15.5.28",
