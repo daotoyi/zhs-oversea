@@ -2,11 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Nav } from '@/components/Nav';
-import { POSTS } from '@/data/posts';
 import { Footer } from '@/components/Footer';
-
-export const dynamic = 'force-static';
-
+import { getNavStrings, getFooterStrings, getUi, localizePost } from '@/lib/i18n';
+import { POSTS } from '@/data/posts';
+import { toTraditional } from '@/lib/i18n/convert';
 
 export function generateStaticParams() {
   return Object.keys(POSTS).map((slug) => ({ slug }));
@@ -26,19 +25,24 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function JournalPost({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const post = POSTS[slug];
-  if (!post) notFound();
+  const base = POSTS[slug];
+  if (!base) notFound();
+
+  const { locale, t } = await getUi();
+  const navStrings = await getNavStrings();
+  const footerStrings = await getFooterStrings();
+  const post = await localizePost(base, slug);
 
   return (
     <>
-      <Nav />
+      <Nav strings={navStrings} />
       <article className="sec" style={{ paddingTop: 56 }}>
         <div className="wrap" style={{ maxWidth: 720 }}>
           <Link href="/journal" className="eyebrow" style={{ display: 'inline-block', marginBottom: 28 }}>
-            ← Journal
+            {t('← Journal', '← 札记')}
           </Link>
           <div className="journal-meta">
-            {post.category} · {post.minutes} min
+            {locale === 'en' ? post.category : toTraditional(post.category)} · {post.minutes} min
           </div>
           <h1 className="serif" style={{ fontWeight: 300, fontSize: 'clamp(1.9rem, 3.8vw, 2.9rem)', lineHeight: 1.15, margin: '10px 0 32px' }}>
             {post.title}
@@ -53,7 +57,7 @@ export default async function JournalPost({ params }: { params: Promise<{ slug: 
           ))}
         </div>
       </article>
-      <Footer />
+      <Footer strings={footerStrings} />
     </>
   );
 }

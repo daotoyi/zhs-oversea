@@ -2,6 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
+import { getNavStrings, getFooterStrings, getUi, localizePost } from '@/lib/i18n';
+import { POSTS } from '@/data/posts';
+import { UI_ZH } from '@/lib/i18n/zh-hans';
+import { toTraditional } from '@/lib/i18n/convert';
 
 export const metadata: Metadata = {
   title: 'Journal',
@@ -10,103 +14,51 @@ export const metadata: Metadata = {
   alternates: { canonical: '/journal' },
 };
 
-const ENTRIES = [
-  {
-    slug: 'silk-text-vs-received-version',
-    category: 'Manuscripts',
-    minutes: 6,
-    title: 'Why the silk text is harder — and truer — than the popular version',
-    excerpt:
-      'The received Dao De Jing was edited into smoothness for two thousand years. That is exactly what makes it less useful.',
-    image: '/products/calligraphy-zhixu.jpg',
-  },
-  {
-    slug: 'wu-wei-for-working-people',
-    category: 'Practice',
-    minutes: 4,
-    title: 'What “wu wei” actually asks of a working person',
-    excerpt: 'Not passivity. A description of effort that does not waste itself.',
-    image: '/products/lightning-wood.jpg',
-  },
-  {
-    slug: 'cinnabar-mercury-safety-report',
-    category: 'Materials',
-    minutes: 5,
-    title: 'Cinnabar, mercury, and how to read a safety report',
-    excerpt:
-      'Why we seal it in silver, why we do not sell it to wear, and what the assay numbers actually mean.',
-    image: '/products/cinnabar-bracelet.jpg',
-  },
-  {
-    slug: 'choosing-a-teapot-that-lasts',
-    category: 'Materials',
-    minutes: 7,
-    title: 'Choosing a teapot that will last twenty years',
-    excerpt:
-      'Original ore versus a blend, and why an unglazed pot that seasons is worth more than a glazed one that does not.',
-    image: '/products/sanhe-wood.jpg',
-  },
-  {
-    slug: 'incense-as-measure-of-time',
-    category: 'Practice',
-    minutes: 3,
-    title: 'Incense was the clock before the clock',
-    excerpt: 'One stick, one sitting, one measure of attention.',
-    image: '/products/tianguan.jpg',
-  },
-  {
-    slug: 'writing-by-hand-at-work',
-    category: 'Practice',
-    minutes: 4,
-    title: 'Keeping a hand-written practice while working full time',
-    excerpt: 'Fifteen minutes a day, and why that is enough.',
-    image: '/products/calligraphy-shangshan.jpg',
-  },
-];
+export default async function JournalPage() {
+  const { locale, t } = await getUi();
+  const navStrings = await getNavStrings();
+  const footerStrings = await getFooterStrings();
 
-export default function JournalPage() {
+  const slugs = Object.keys(POSTS);
+  const entries = await Promise.all(slugs.map(async (slug) => ({ ...(await localizePost(POSTS[slug], slug)), slug })));
+  const h = UI_ZH.journalPage;
+  const Z = (s: string) => (locale === 'en' ? s : toTraditional(s));
+
   return (
     <>
-      <Nav />
+      <Nav strings={navStrings} />
       <section className="sec" style={{ paddingTop: 64, paddingBottom: 48 }}>
         <div className="wrap">
-          <div className="eyebrow" style={{ marginBottom: 18 }}>
-            Journal · 道之美
-          </div>
-          <h1
-            className="serif"
-            style={{ fontWeight: 300, fontSize: 'clamp(2.2rem, 4.4vw, 3.4rem)', lineHeight: 1.1, marginBottom: 22 }}
-          >
-            Reading the Way<br />
-            <em>in ordinary life.</em>
+          <div className="eyebrow" style={{ marginBottom: 18 }}>{t('道之美 · Journal', h.eyebrow)}</div>
+          <h1 className="serif" style={{ fontWeight: 300, fontSize: 'clamp(2.2rem, 4.4vw, 3.4rem)', lineHeight: 1.1, marginBottom: 22 }}>
+            {t('Reading the Way', '在寻常日子里')}
+            <br />
+            <em>{t('in ordinary life.', '读道。')}</em>
           </h1>
-          <p style={{ fontSize: 15, color: 'var(--ash)', maxWidth: 540, lineHeight: 1.8 }}>
-            On manuscripts, materials, and the daily practice of a studio that has been at this for
-            fifteen years.
-          </p>
+          <p style={{ fontSize: 15, color: 'var(--ash)', maxWidth: 540, lineHeight: 1.8 }}>{Z(h.lead)}</p>
         </div>
       </section>
 
       <section style={{ paddingBottom: 96 }}>
         <div className="wrap">
           <div className="journal-grid">
-            {ENTRIES.map((e) => (
+            {entries.map((e) => (
               <Link key={e.slug} href={`/journal/${e.slug}`} className="journal-card">
                 <div className="journal-media">
                   <img src={e.image} alt="" />
                 </div>
                 <div className="journal-meta">
-                  {e.category} · {e.minutes} min
+                  {locale === 'en' ? e.category : toTraditional(e.category)} · {e.minutes} min
                 </div>
                 <h3 className="serif">{e.title}</h3>
-                <p>{e.excerpt}</p>
+                <p>{e.body[0]}</p>
               </Link>
             ))}
           </div>
         </div>
       </section>
 
-      <Footer />
+      <Footer strings={footerStrings} />
     </>
   );
 }

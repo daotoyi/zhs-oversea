@@ -1,6 +1,29 @@
 import Link from 'next/link';
 
-export function Footer() {
+export function Footer({ strings }: { strings: {
+  about: string;
+  cnLink: string;
+  shopH: string;
+  learnH: string;
+  supportH: string;
+  shipping: string;
+  returns: string;
+  trace: string;
+  privacyTerms: string;
+  imprint: string;
+  copyright: string;
+  daoDeJing: string;
+  hexagrams: string;
+  fourPillars: string;
+  sessions: string;
+  journal: string;
+  tea: string;
+  incense: string;
+  writing: string;
+  books: string;
+  allObjects: string;
+  contact?: string;
+} }) {
   return (
     <footer className="footer">
       <div className="wrap">
@@ -13,46 +36,43 @@ export function Footer() {
                 <span className="brand-sub">Dao Culture &amp; Living</span>
               </span>
             </div>
-            <p>
-              A Beijing studio working with the Mawangdui silk manuscript tradition. Objects, texts and
-              practice — carried to wherever someone wants to begin.
-            </p>
+            <p>{strings.about}</p>
             <Link className="cn-link" href="https://zhenhesheng.cn">
-              中文站 zhenhesheng.cn →
+              {strings.cnLink}
             </Link>
           </div>
           <div className="foot-col">
-            <h5>Shop</h5>
-            <Link href="/objects">All objects</Link>
-            <Link href="/objects?category=tea-ware">Tea ware</Link>
-            <Link href="/objects?category=incense-ritual">Incense &amp; ritual</Link>
-            <Link href="/objects?category=writing-desk">Writing &amp; desk</Link>
-            <Link href="/objects?category=books">Books</Link>
+            <h5>{strings.shopH}</h5>
+            <Link href="/objects">{strings.allObjects}</Link>
+            <Link href="/objects?category=tea-ware">{strings.tea}</Link>
+            <Link href="/objects?category=incense-ritual">{strings.incense}</Link>
+            <Link href="/objects?category=writing-desk">{strings.writing}</Link>
+            <Link href="/objects?category=books">{strings.books}</Link>
           </div>
           <div className="foot-col">
-            <h5>Learn</h5>
-            <Link href="/classics">The Dao De Jing</Link>
-            <Link href="/classics/yijing">Sixty-four hexagrams</Link>
-            <Link href="/classics/bazi">Four Pillars</Link>
-            <Link href="/practice">Weekly study sessions</Link>
-            <Link href="/journal">Journal</Link>
+            <h5>{strings.learnH}</h5>
+            <Link href="/classics">{strings.daoDeJing}</Link>
+            <Link href="/classics/yijing">{strings.hexagrams}</Link>
+            <Link href="/classics/bazi">{strings.fourPillars}</Link>
+            <Link href="/practice">{strings.sessions}</Link>
+            <Link href="/journal">{strings.journal}</Link>
           </div>
           <div className="foot-col">
-            <h5>Support</h5>
-            <Link href="/contact">Contact</Link>
-            <Link href="/policies/shipping">Shipping &amp; duties</Link>
-            <Link href="/policies/returns">Returns</Link>
-            <Link href="/traceability">Traceability standards</Link>
-            <Link href="/policies/privacy">Privacy &amp; terms</Link>
+            <h5>{strings.supportH}</h5>
+            <Link href="/contact">{strings.contact ?? 'Contact'}</Link>
+            <Link href="/policies/shipping">{strings.shipping}</Link>
+            <Link href="/policies/returns">{strings.returns}</Link>
+            <Link href="/traceability">{strings.trace}</Link>
+            <Link href="/policies/privacy">{strings.privacyTerms}</Link>
+            <Link href="/policies/imprint">{strings.imprint}</Link>
           </div>
         </div>
         <div className="foot-bottom">
           <p>
-            © 2026 Zhen He Sheng · Beijing, China ·{' '}
+            {strings.copyright}{' '}
             <Link href="/policies/imprint" style={{ borderBottom: '1px solid #4a443c' }}>
-              Imprint &amp; legal notice
-            </Link>{' '}
-            · Registered in Hong Kong SAR
+              {strings.imprint}
+            </Link>
           </p>
           <div className="pay-row">
             <span className="pay-badge">VISA</span>

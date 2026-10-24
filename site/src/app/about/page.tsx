@@ -1,18 +1,22 @@
 import type { Metadata } from 'next';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
+import { getNavStrings, getFooterStrings, getTrustItems, getUi } from '@/lib/i18n';
 
 export const metadata: Metadata = {
   title: 'About — our lineage',
   description:
-    'A Beijing studio working with the Mawangdui silk manuscript tradition. Our teachers, our workshops, our standards.',
+    'A Beijing studio working with the Mawangdui silk manuscript tradition. 我们的老师, our workshops, our standards.',
   alternates: { canonical: '/about' },
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const { locale, t } = await getUi();
+  const navStrings = await getNavStrings();
+  const footerStrings = await getFooterStrings();
   return (
     <>
-      <Nav />
+      <Nav strings={navStrings} />
       <section className="sec" style={{ paddingTop: 64 }}>
         <div className="wrap">
           <div className="eyebrow" style={{ marginBottom: 18 }}>
@@ -38,7 +42,7 @@ export default function AboutPage() {
               situation — and much of its force comes from what it refuses to smooth out.
             </p>
 
-            <h2>Our teachers</h2>
+            <h2>我们的老师</h2>
             <p>
               Liang Kun teaches the silk <em>Dao De Jing</em> online on Tuesday evenings; Zhang Hong
               teaches the origins of Chinese characters and calligraphy on Sundays. Both sessions are
@@ -46,7 +50,7 @@ export default function AboutPage() {
               classical practice.
             </p>
 
-            <h2>What we make</h2>
+            <h2>我们做什么</h2>
             <p>
               We work with a small number of workshops rather than running our own production. The
               tea ware comes from Yixing in Jiangsu and Jingdezhen in Jiangxi; the writing desk objects
@@ -54,7 +58,7 @@ export default function AboutPage() {
               Each object is made by people we can name.
             </p>
 
-            <h2>Our standard</h2>
+            <h2>我们的标准</h2>
             <p>
               We publish what most sellers will not: the maker, the origin, the material composition,
               the laboratory report number, the CITES status, and the consecration certificate number
@@ -62,20 +66,20 @@ export default function AboutPage() {
               lets you check us rather than take our word.
             </p>
 
-            <h2>Contact</h2>
+            <h2>联系</h2>
             <p>
               Zhen He Sheng, Beijing, China. Registered in Hong Kong SAR. We answer written enquiries
               within one business day — a person reads them.
             </p>
             <p>
               <a href="/contact" className="link-more">
-                Contact us →
+                联系 us →
               </a>
             </p>
           </div>
         </div>
       </section>
-      <Footer />
+      <Footer strings={footerStrings} />
     </>
   );
 }

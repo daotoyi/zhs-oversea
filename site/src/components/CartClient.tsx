@@ -5,13 +5,75 @@ import { useState } from 'react';
 import { useCart } from '@/lib/cart';
 import { getProduct } from '@/lib/products';
 import { formatUsd } from '@/lib/shipping';
+import type { Locale } from '@/lib/i18n/config';
+import { toTraditional } from '@/lib/i18n/convert';
+import { UI_ZH } from '@/lib/i18n/zh-hans';
 
-export function CartClient() {
+const C = UI_ZH.common;
+
+type S = {
+  empty: string;
+  browse: string;
+  summary: string;
+  subtotal: string;
+  shipping: string;
+  delivery: string;
+  remove: string;
+  away: (amount: string) => string;
+  duty: string;
+  checkout: string;
+  opening: string;
+  light: string;
+  heavy: string;
+};
+
+const STRINGS: Record<Locale, S> = {
+  en: {
+    empty: 'Your bag is empty. The collection is a good place to start.',
+    browse: 'Browse the objects',
+    summary: 'Summary',
+    subtotal: 'Subtotal',
+    shipping: 'Shipping',
+    delivery: 'Estimated delivery',
+    remove: 'Remove',
+    away: (a) => `You’re ${a} away from free US shipping.`,
+    duty: 'Duties and US sales tax are calculated at checkout.',
+    checkout: 'Checkout',
+    opening: 'Opening secure checkout…',
+    light: '7–12 business days',
+    heavy: '10–18 business days',
+  },
+  'zh-Hans': {
+    empty: C.emptyBag,
+    browse: C.browseObjects,
+    summary: C.summary,
+    subtotal: C.subtotal,
+    shipping: C.shipping,
+    delivery: C.estimatedDelivery,
+    remove: C.remove,
+    away: (a: string) => C.awayFromFreeShipping.replace('{amount}', a),
+    duty: C.dutiesAtCheckout,
+    checkout: C.checkout,
+    opening: UI_ZH.cartPage.openingCheckout,
+    light: '7–12 个工作日',
+    heavy: '10–18 个工作日',
+  },
+  'zh-Hant': {} as S,
+};
+STRINGS['zh-Hant'] = Object.fromEntries(
+  Object.entries(STRINGS['zh-Hans']).map(([k, v]) => [
+    k,
+    typeof v === 'function' ? (a: string) => toTraditional(v(a)) : toTraditional(v),
+  ])
+) as S;
+
+export function CartClient({ locale }: { locale: Locale }) {
   const lines = useCart((s) => s.lines);
   const setQuantity = useCart((s) => s.setQuantity);
   const removeLine = useCart((s) => s.removeLine);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const s = STRINGS[locale];
 
   const resolved = lines
     .map((line) => {
@@ -53,11 +115,9 @@ export function CartClient() {
   if (resolved.length === 0) {
     return (
       <div style={{ padding: '80px 0', textAlign: 'center' }}>
-        <p style={{ fontSize: 14, color: 'var(--ash)', marginBottom: 26 }}>
-          Your bag is empty. The collection is a good place to start.
-        </p>
+        <p style={{ fontSize: 14, color: 'var(--ash)', marginBottom: 26 }}>{s.empty}</p>
         <Link className="btn btn-outline" href="/objects">
-          Browse the objects
+          {s.browse}
         </Link>
       </div>
     );
@@ -78,7 +138,7 @@ export function CartClient() {
               <div className="cart-line-zh">{product.titleZh}</div>
               <div className="cart-line-variant">{variant.label}</div>
               <button className="cart-remove" onClick={() => removeLine(line.slug, line.variantId)}>
-                Remove
+                {s.remove}
               </button>
             </div>
             <div className="cart-line-right">
@@ -94,36 +154,36 @@ export function CartClient() {
       </div>
 
       <aside className="cart-summary">
-        <h2 className="serif">Summary</h2>
+        <h2 className="serif">{s.summary}</h2>
         <dl>
           <div>
-            <dt>Subtotal</dt>
+            <dt>{s.subtotal}</dt>
             <dd>{formatUsd(subtotal)}</dd>
           </div>
           <div>
-            <dt>Shipping</dt>
-            <dd>{shipping === 0 ? 'Free' : formatUsd(shipping)}</dd>
+            <dt>{s.shipping}</dt>
+            <dd>{shipping === 0 ? C.free : formatUsd(shipping)}</dd>
           </div>
           <div>
-            <dt>Estimated delivery</dt>
-            <dd>{totalWeight >= 2000 ? '10–18 business days' : '7–12 business days'}</dd>
+            <dt>{s.delivery}</dt>
+            <dd>{totalWeight >= 2000 ? s.heavy : s.light}</dd>
           </div>
         </dl>
-        <div className="cart-note">Duties and US sales tax are calculated at checkout.</div>
+        <div className="cart-note">{s.duty}</div>
 
         {remaining > 0 && (
           <div className="cart-progress">
             <div className="cart-progress-bar">
               <span style={{ width: `${Math.min(100, (subtotal / 6000) * 100)}%` }} />
             </div>
-            <p>You&rsquo;re {formatUsd(remaining)} away from free US shipping.</p>
+            <p>{s.away(formatUsd(remaining))}</p>
           </div>
         )}
 
         {error && <div className="cart-error">{error}</div>}
 
         <button className="btn btn-solid" style={{ width: '100%' }} onClick={checkout} disabled={busy}>
-          {busy ? 'Opening secure checkout…' : 'Checkout'}
+          {busy ? s.opening : s.checkout}
         </button>
         <div className="pay-row" style={{ justifyContent: 'center', marginTop: 16 }}>
           <span className="pay-badge">VISA</span>

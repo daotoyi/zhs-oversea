@@ -6,6 +6,9 @@ import { formatUsd } from '@/lib/shipping';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { AddToCart } from '@/components/AddToCart';
+import { localizeProduct, getNavStrings, getFooterStrings, getUi } from '@/lib/i18n';
+import { UI_ZH } from '@/lib/i18n/zh-hans';
+import { toTraditional } from '@/lib/i18n/convert';
 
 export async function generateStaticParams() {
   const { getProducts } = await import('@/lib/products');
@@ -37,19 +40,33 @@ export async function generateMetadata({
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = getProduct(slug);
-  if (!product) notFound();
+  const { locale, t } = await getUi();
+  const navStrings = await getNavStrings();
+  const footerStrings = await getFooterStrings();
 
-  const related = getRelatedProducts(product);
+  const base = getProduct(slug);
+  if (!base) notFound();
+  const product = await localizeProduct(base);
+  const related = getRelatedProducts(base);
+  const h = UI_ZH.pdp;
+  const Z = (s: string) => (locale === 'en' ? s : toTraditional(s));
+
+  const addToCartStrings = {
+    addToCart: t('Add to cart', UI_ZH.common.addToCart),
+    soldOut: t('Currently unavailable', UI_ZH.common.soldOut),
+    shipHintLight: t('Ships from Beijing — 7–12 business days to the US, insured.', h.shipHintLight),
+    shipHintHeavy: t('Heavier piece — 8–14 business days to the US, insured.', h.shipHintHeavy),
+    variantLabel: t('Variant', h.variantLabel),
+  };
 
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: product.title,
+    name: product.loc.title,
     description: product.seo.description,
     image: product.images.map((i) => `https://zhenhesheng.com${i}`),
     sku: product.variants[0]?.sku,
-    material: product.materials.join(', '),
+    material: product.loc.materials.join(', '),
     weight: product.weightGrams ? { '@type': 'QuantitativeValue', value: product.weightGrams, unitCode: 'GRM' } : undefined,
     offers: {
       '@type': 'Offer',
@@ -69,26 +86,43 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     },
   };
 
+  const assurances = locale === 'en'
+    ? [
+        'Free US shipping over $60 · duties included at checkout',
+        '30-day returns, return shipping covered',
+        'Shipped from Beijing with tracking · 7–15 business days',
+        'Each order includes an English card explaining the object’s origin',
+      ]
+    : h.assurances.map(toTraditional);
+
+  const categories: Record<string, [string, string]> = {
+    'tea-ware': ['Tea ware', UI_ZH.objectsPage.catTea],
+    'incense-ritual': ['Incense & ritual', UI_ZH.objectsPage.catIncense],
+    'writing-desk': ['Writing & desk', UI_ZH.objectsPage.catWriting],
+    'talisman-objects': ['Talisman objects', UI_ZH.objectsPage.catTalisman],
+    'home-altar': ['Home & altar', UI_ZH.objectsPage.catHome],
+    books: ['Books', UI_ZH.objectsPage.catBooks],
+  };
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <Nav />
+      <Nav strings={navStrings} />
 
       <section className="sec" style={{ paddingTop: 40 }}>
         <div className="wrap">
           <nav className="crumb" aria-label="Breadcrumb">
-            <Link href="/">Home</Link>
+            <Link href="/">{t('Home', UI_ZH.common.home)}</Link>
             <span>/</span>
-            <Link href="/objects">Objects</Link>
+            <Link href="/objects">{t('Objects', UI_ZH.common.objects)}</Link>
             <span>/</span>
-            <span aria-current="page">{product.title}</span>
+            <span aria-current="page">{product.loc.title}</span>
           </nav>
 
           <div className="pdp">
-            {/* ── 图 ── */}
             <div className="pdp-media">
               <div className="pdp-main">
-                <img src={product.images[0]} alt={product.title} />
+                <img src={product.images[0]} alt={product.loc.title} />
               </div>
               <div className="pdp-thumbs">
                 {product.images.map((img) => (
@@ -99,66 +133,65 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               </div>
             </div>
 
-            {/* ── 信息 ── */}
             <div className="pdp-info">
               <div className="obj-cat">{product.titleZh}</div>
-              <h1 className="pdp-title serif">{product.title}</h1>
-              <p className="pdp-tagline">{product.tagline}</p>
+              <h1 className="pdp-title serif">{product.loc.title}</h1>
+              <p className="pdp-tagline">{product.loc.tagline}</p>
 
               <div className="pdp-price">
                 {product.compareAtUsd && <s>{formatUsd(product.compareAtUsd)}</s>}
                 <strong>{formatUsd(product.priceUsd)}</strong>
               </div>
 
-              <p className="pdp-desc">{product.description}</p>
+              <p className="pdp-desc">{product.loc.description}</p>
 
               {/* 溯源块 —— 差异化护城河 */}
               <div className="pdp-trace">
-                <div className="pdp-trace-title">Traceability</div>
+                <div className="pdp-trace-title">{t('Traceability', h.traceTitle)}</div>
                 <dl>
                   <div>
-                    <dt>Maker</dt>
+                    <dt>{t('Maker', h.maker)}</dt>
                     <dd>
                       {product.maker.name} — {product.maker.region}
                     </dd>
                   </div>
                   <div>
-                    <dt>Craft</dt>
-                    <dd>{product.maker.craft}</dd>
+                    <dt>{t('Craft', h.craft)}</dt>
+                    <dd>{product.loc.craft}</dd>
                   </div>
                   <div>
-                    <dt>Material</dt>
-                    <dd>{product.materials.join(' · ')}</dd>
+                    <dt>{t('Material', h.material)}</dt>
+                    <dd>{product.loc.materials.join(' · ')}</dd>
                   </div>
                   {product.dimensionsCm && (
                     <div>
-                      <dt>Dimensions</dt>
+                      <dt>{t('Dimensions', h.dimensions)}</dt>
                       <dd>
                         {product.dimensionsCm.w} × {product.dimensionsCm.h} × {product.dimensionsCm.d} cm
                       </dd>
                     </div>
                   )}
                   <div>
-                    <dt>Laboratory</dt>
+                    <dt>{t('Laboratory', h.laboratory)}</dt>
                     <dd>
                       {product.assay
                         ? `${product.assay.lab} · ${product.assay.reportNo} (${product.assay.scope.join(', ')})`
-                        : 'Not applicable to this material'}
+                        : t('Not applicable to this material', '此材质无需检测')}
                     </dd>
                   </div>
                   <div>
-                    <dt>CITES</dt>
+                    <dt>{t('CITES', h.cites)}</dt>
                     <dd>
                       {product.cites.status === 'regulated'
-                        ? `Appendix II — ${product.cites.species} · permit ${product.cites.permitNo}`
-                        : 'Not a CITES-regulated species'}
+                        ? `${t('Appendix II', '附录 II')} — ${product.cites.species} · ${t('permit', '许可')} ${product.cites.permitNo}`
+                        : t('Not a CITES-regulated species', '非 CITES 管制物种')}
                     </dd>
                   </div>
                   {product.consecration && (
                     <div>
-                      <dt>Consecration</dt>
+                      <dt>{t('Consecration', h.consecration)}</dt>
                       <dd>
-                        {product.consecration.lineage} · cert. {product.consecration.certificateNo} (
+                        {product.consecration.lineage} · {t('cert.', '证书')} {product.consecration.certificateNo} (
                         {product.consecration.date})
                       </dd>
                     </div>
@@ -168,26 +201,30 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
               {product.wearable === false && product.assay && (
                 <div className="pdp-notice">
-                  <strong>Display piece.</strong> This item contains a material regulated under EU REACH
-                  restrictions. It is sealed against skin contact and is made to be looked at rather than
-                  worn. The assay report above is provided so you can check it before ordering.
+                  <strong>{t('Display piece.', '展示级器物。')}</strong>{' '}
+                  {t(
+                    'This item contains a material regulated under EU REACH restrictions. It is sealed against skin contact and is made to be looked at rather than worn. The assay report above is provided so you can check it before ordering.',
+                    h.displayNotice
+                  )}
                 </div>
               )}
 
               {product.prop65Warning && (
                 <div className="pdp-notice warn">
-                  <strong>California Proposition 65.</strong> This product contains a substance listed
-                  under Proposition 65. The report number above identifies the testing performed.
+                  <strong>{t('California Proposition 65.', '加州 65 号提案警示。')}</strong>{' '}
+                  {t(
+                    'This product contains a substance listed under Proposition 65. The report number above identifies the testing performed.',
+                    h.prop65Notice
+                  )}
                 </div>
               )}
 
-              <AddToCart product={product} />
+              <AddToCart product={product} strings={addToCartStrings} />
 
               <ul className="pdp-assurances">
-                <li>Free US shipping over $60 · duties included at checkout</li>
-                <li>30-day returns, return shipping covered</li>
-                <li>Shipped from Beijing with tracking · 7–15 business days</li>
-                <li>Each order includes an English card explaining the object&rsquo;s origin</li>
+                {assurances.map((a) => (
+                  <li key={a}>{a}</li>
+                ))}
               </ul>
             </div>
           </div>
@@ -195,14 +232,17 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           {related.length > 0 && (
             <div style={{ marginTop: 96 }}>
               <div className="eyebrow" style={{ marginBottom: 22 }}>
-                Also in this category
+                {t('Also in this category', '同类器物')}
               </div>
               <div className="obj-grid">
                 {related.map((p) => (
                   <Link key={p.slug} className="obj-card" href={`/objects/${p.slug}`}>
                     <div className="obj-media">
                       <img src={p.images[0]} alt={p.title} />
-                      <span className="obj-price">from {formatUsd(p.priceUsd)}</span>
+                      <span className="obj-price">
+                        {t('from ', '起 ')}
+                        {formatUsd(p.priceUsd)}
+                      </span>
                     </div>
                     <div className="obj-body">
                       <div className="obj-cat">{p.titleZh}</div>
@@ -217,7 +257,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </div>
       </section>
 
-      <Footer />
+      <Footer strings={footerStrings} />
     </>
   );
 }

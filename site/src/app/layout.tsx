@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { LocaleProvider } from '@/lib/i18n/client';
+import { getLocale } from '@/lib/i18n/server';
+import { LOCALE_META } from '@/lib/i18n/config';
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://zhenhesheng.com'),
@@ -53,9 +56,11 @@ export const viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale();
+
   return (
-    <html lang="en">
+    <html lang={LOCALE_META[locale].htmlLang}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -64,8 +69,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
         <link rel="alternate" hrefLang="zh-Hans-CN" href="https://zhenhesheng.cn" />
+        <link rel="alternate" hrefLang="x-default" href="https://zhenhesheng.com" />
       </head>
-      <body>{children}</body>
+      <body>
+        <LocaleProvider initialLocale={locale}>{children}</LocaleProvider>
+      </body>
     </html>
   );
 }

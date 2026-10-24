@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
+import { getNavStrings, getFooterStrings } from '@/lib/i18n';
 
 export const metadata: Metadata = {
   title: 'Returns & refunds',
@@ -9,10 +10,12 @@ export const metadata: Metadata = {
   alternates: { canonical: '/policies/returns' },
 };
 
-export default function ReturnsPage() {
+export default async function ReturnsPage() {
+  const navStrings = await getNavStrings();
+  const footerStrings = await getFooterStrings();
   return (
     <>
-      <Nav />
+      <Nav strings={navStrings} />
       <section className="sec" style={{ paddingTop: 64 }}>
         <div className="wrap">
           <div className="eyebrow" style={{ marginBottom: 18 }}>
@@ -66,7 +69,7 @@ export default function ReturnsPage() {
           </div>
         </div>
       </section>
-      <Footer />
+      <Footer strings={footerStrings} />
     </>
   );
 }

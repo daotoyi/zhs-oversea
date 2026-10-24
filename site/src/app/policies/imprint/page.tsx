@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
+import { getNavStrings, getFooterStrings } from '@/lib/i18n';
 
 export const metadata: Metadata = {
   title: 'Imprint & legal notice',
@@ -8,10 +9,12 @@ export const metadata: Metadata = {
   alternates: { canonical: '/policies/imprint' },
 };
 
-export default function ImprintPage() {
+export default async function ImprintPage() {
+  const navStrings = await getNavStrings();
+  const footerStrings = await getFooterStrings();
   return (
     <>
-      <Nav />
+      <Nav strings={navStrings} />
       <section className="sec" style={{ paddingTop: 64 }}>
         <div className="wrap">
           <div className="eyebrow" style={{ marginBottom: 18 }}>
@@ -83,7 +86,7 @@ export default function ImprintPage() {
           </div>
         </div>
       </section>
-      <Footer />
+      <Footer strings={footerStrings} />
     </>
   );
 }

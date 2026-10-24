@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
+import { getNavStrings, getFooterStrings, getTrustItems, getUi } from '@/lib/i18n';
 
 export const metadata: Metadata = {
   title: 'The Four Pillars — an introduction',
@@ -23,10 +24,13 @@ const PARTS = [
   { n: 10, title: 'What the system cannot tell you', zh: '所不能' },
 ];
 
-export default function BaziPage() {
+export default async function BaziPage() {
+  const { locale, t } = await getUi();
+  const navStrings = await getNavStrings();
+  const footerStrings = await getFooterStrings();
   return (
     <>
-      <Nav />
+      <Nav strings={navStrings} />
       <section className="sec" style={{ paddingTop: 56 }}>
         <div className="wrap">
           <Link href="/classics" className="eyebrow" style={{ display: 'inline-block', marginBottom: 28 }}>
@@ -59,7 +63,7 @@ export default function BaziPage() {
           </p>
         </div>
       </section>
-      <Footer />
+      <Footer strings={footerStrings} />
     </>
   );
 }

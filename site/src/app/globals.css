@@ -1893,3 +1893,161 @@ button {
   opacity: 0.65;
   cursor: default;
 }
+
+/* ══════════════════════════════════════════════════
+   语言切换器（页头右上角）
+   ══════════════════════════════════════════════════ */
+
+.lang-switch {
+  position: relative;
+}
+
+.lang-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 6px 11px 6px 9px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  transition:
+    border-color 0.2s var(--ease),
+    background 0.2s var(--ease);
+}
+
+.lang-trigger:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+
+.lang-trigger:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.lang-globe {
+  display: grid;
+  place-items: center;
+  color: var(--ash);
+  line-height: 0;
+}
+
+.lang-trigger:hover .lang-globe {
+  color: var(--ink);
+}
+
+.lang-current {
+  font-weight: 500;
+  min-width: 18px;
+  text-align: center;
+}
+
+.lang-caret {
+  display: grid;
+  place-items: center;
+  color: var(--ash);
+  line-height: 0;
+  transition: transform 0.2s var(--ease);
+}
+
+.lang-caret.up {
+  transform: rotate(180deg);
+}
+
+.lang-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 100;
+  min-width: 168px;
+  background: var(--porcelain);
+  border: 0.5px solid var(--rule);
+  border-radius: var(--border-radius-md, 8px);
+  box-shadow: 0 6px 24px rgba(26, 23, 20, 0.08);
+  padding: 5px;
+  list-style: none;
+  margin: 0;
+}
+
+.lang-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  padding: 9px 10px;
+  font-size: 13px;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s var(--ease);
+}
+
+.lang-option:hover {
+  background: var(--paper);
+}
+
+.lang-option.on {
+  background: var(--paper);
+  font-weight: 500;
+}
+
+.lang-option-short {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  font-size: 10.5px;
+  letter-spacing: 0;
+  color: var(--ash);
+  flex-shrink: 0;
+}
+
+.lang-option.on .lang-option-short {
+  border-color: var(--cinnabar);
+  color: var(--cinnabar);
+}
+
+.lang-option-label {
+  flex: 1;
+}
+
+.lang-check {
+  display: grid;
+  place-items: center;
+  color: var(--cinnabar);
+  line-height: 0;
+}
+
+/* 中文语种下，导航与正文字号微调，避免中文显得过小 */
+html[lang^='zh'] body {
+  font-size: 15.5px;
+  letter-spacing: 0.01em;
+}
+
+html[lang^='zh'] .serif,
+html[lang^='zh'] .brand-name {
+  letter-spacing: 0.06em;
+}
+
+html[lang^='zh'] .menu,
+html[lang^='zh'] .foot-col a,
+html[lang^='zh'] .eyebrow {
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 980px) {
+  .lang-trigger {
+    padding: 6px 9px 6px 8px;
+  }
+
+  .lang-menu {
+    min-width: 152px;
+  }
+}

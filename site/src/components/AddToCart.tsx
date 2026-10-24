@@ -3,28 +3,41 @@
 import { useState } from 'react';
 import { useCart } from '@/lib/cart';
 import { formatUsd } from '@/lib/shipping';
-import type { Product } from '@/lib/types';
+import type { LocalizedProduct } from '@/lib/i18n';
 
-export function AddToCart({ product }: { product: Product }) {
+export function AddToCart({
+  product,
+  strings,
+}: {
+  product: LocalizedProduct;
+  strings: {
+    addToCart: string;
+    soldOut: string;
+    shipHintLight: string;
+    shipHintHeavy: string;
+    variantLabel: string;
+  };
+}) {
   const [variantId, setVariantId] = useState(product.variants[0]?.id ?? '');
   const [quantity, setQuantity] = useState(1);
   const addLine = useCart((s) => s.addLine);
 
-  const variant = product.variants.find((v) => v.id === variantId) ?? product.variants[0];
+  const variant = product.variants.find((v: { id: string }) => v.id === variantId) ?? product.variants[0];
   const soldOut = variant?.stock === 0;
+  const label = (id: string) => product.loc.variantLabels[id] ?? product.variants.find((v: { id: string }) => v.id === id)?.label ?? id;
 
   return (
     <div className="pdp-buy">
       {product.variants.length > 1 && (
         <div className="pdp-variants">
-          {product.variants.map((v) => (
+          {product.variants.map((v: { id: string; label: string; priceUsd: number; stock: number }) => (
             <button
               key={v.id}
               type="button"
               className={`variant${variantId === v.id ? ' on' : ''}`}
               onClick={() => setVariantId(v.id)}
             >
-              {v.label}
+              {label(v.id)}
               <span>{formatUsd(v.priceUsd)}</span>
             </button>
           ))}
@@ -47,14 +60,12 @@ export function AddToCart({ product }: { product: Product }) {
           disabled={soldOut}
           onClick={() => addLine({ slug: product.slug, variantId: variant.id, quantity })}
         >
-          {soldOut ? 'Currently unavailable' : `Add to cart — ${formatUsd(variant.priceUsd * quantity)}`}
+          {soldOut ? strings.soldOut : `${strings.addToCart} — ${formatUsd(variant.priceUsd * quantity)}`}
         </button>
       </div>
 
       <p className="pdp-ship-hint">
-        {variant && variant.weightGrams >= 500
-          ? 'Heavier piece — 8–14 business days to the US, insured.'
-          : 'Ships from Beijing — 7–12 business days to the US, insured.'}
+        {variant && variant.weightGrams >= 500 ? strings.shipHintHeavy : strings.shipHintLight}
       </p>
     </div>
   );
