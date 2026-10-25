@@ -17,6 +17,7 @@ const CATEGORY_EN: Record<string, string> = {
   'writing-desk': 'Writing & desk',
   'talisman-objects': 'Talisman objects',
   'home-altar': 'Home & altar',
+  apparel: 'Apparel',
   books: 'Books',
 };
 
@@ -26,6 +27,7 @@ const CATEGORY_ZH: Record<string, string> = {
   'writing-desk': UI_ZH.objectsPage.catWriting,
   'talisman-objects': UI_ZH.objectsPage.catTalisman,
   'home-altar': UI_ZH.objectsPage.catHome,
+  apparel: UI_ZH.objectsPage.catApparel,
   books: UI_ZH.objectsPage.catBooks,
 };
 

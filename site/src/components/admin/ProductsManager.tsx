@@ -20,7 +20,7 @@ type Prod = {
 
 // 必须与 lib/types.ts 的 ProductCategory 完全一致，否则存进去的品类
 // 前台筛选（/objects?category=...）匹配不到，商品会从对应分类消失。
-const CATS = ['books', 'writing-desk', 'tea-ware', 'incense-ritual', 'talisman-objects', 'home-altar'];
+const CATS = ['books', 'writing-desk', 'tea-ware', 'incense-ritual', 'talisman-objects', 'home-altar', 'apparel'];
 const CAT_LABELS: Record<string, string> = {
   books: '书籍',
   'writing-desk': '文房',
@@ -28,6 +28,7 @@ const CAT_LABELS: Record<string, string> = {
   'incense-ritual': '香道',
   'talisman-objects': '开运饰品',
   'home-altar': '风水摆件',
+  apparel: '服饰',
 };
 const STATUSES = ['active', 'draft', 'archived'];
 

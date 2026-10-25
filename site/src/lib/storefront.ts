@@ -35,6 +35,7 @@ const VALID_CATEGORIES: ProductCategory[] = [
   'writing-desk',
   'talisman-objects',
   'home-altar',
+  'apparel',
   'books',
 ];
 

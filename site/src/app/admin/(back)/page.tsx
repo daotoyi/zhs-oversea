@@ -14,10 +14,11 @@ const CAT_COLORS: Record<string, string> = {
   'talisman-objects': '#8A6F9E',
   'tea-ware': '#4F7A6A',
   'home-altar': '#6B645B',
+  apparel: '#3F6F8F',
 };
 const CAT_LABELS: Record<string, string> = {
   books: '书籍', 'writing-desk': '文房', 'incense-ritual': '香道',
-  'talisman-objects': '开运饰品', 'tea-ware': '茶器', 'home-altar': '风水摆件',
+  'talisman-objects': '开运饰品', 'tea-ware': '茶器', 'home-altar': '风水摆件', apparel: '服饰',
 };
 
 function usd(cents: number) {

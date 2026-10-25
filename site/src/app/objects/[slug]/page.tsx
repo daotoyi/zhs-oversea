@@ -114,6 +114,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     'writing-desk': ['Writing & desk', UI_ZH.objectsPage.catWriting],
     'talisman-objects': ['Talisman objects', UI_ZH.objectsPage.catTalisman],
     'home-altar': ['Home & altar', UI_ZH.objectsPage.catHome],
+    apparel: ['Apparel', UI_ZH.objectsPage.catApparel],
     books: ['Books', UI_ZH.objectsPage.catBooks],
   };
 

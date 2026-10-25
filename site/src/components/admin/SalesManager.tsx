@@ -16,7 +16,7 @@ type Ev = {
   created_at: number;
 };
 
-const CATS = ['books', 'writing-desk', 'incense', 'ritual', 'teaware', 'wearable'];
+const CATS = ['books', 'writing-desk', 'incense', 'ritual', 'teaware', 'wearable', 'apparel'];
 
 function toLocal(ms: number) { const d = new Date(ms - new Date().getTimezoneOffset() * 60000); return d.toISOString().slice(0, 16); }
 function fromLocal(s: string): number { return s ? new Date(s).getTime() : 0; }

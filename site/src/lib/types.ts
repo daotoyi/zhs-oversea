@@ -14,6 +14,7 @@ export type ProductCategory =
   | 'writing-desk'
   | 'talisman-objects'
   | 'home-altar'
+  | 'apparel'
   | 'books';
 
 export type CitesStatus = 'not-regulated' | 'regulated';

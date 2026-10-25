@@ -28,6 +28,7 @@ const CATEGORY_EN: Record<string, string> = {
   'writing-desk': 'Writing & desk',
   'talisman-objects': 'Talisman objects',
   'home-altar': 'Home & altar',
+  apparel: 'Apparel',
   books: 'Books',
 };
 
@@ -37,6 +38,7 @@ const CATEGORY_ZH: Record<string, string> = {
   'writing-desk': UI_ZH.objectsPage.catWriting,
   'talisman-objects': UI_ZH.objectsPage.catTalisman,
   'home-altar': UI_ZH.objectsPage.catHome,
+  apparel: UI_ZH.objectsPage.catApparel,
   books: UI_ZH.objectsPage.catBooks,
 };
 
@@ -47,6 +49,7 @@ const FILTERS_EN = [
   { key: 'writing-desk', label: 'Writing & desk' },
   { key: 'talisman-objects', label: 'Talisman objects' },
   { key: 'home-altar', label: 'Home & altar' },
+  { key: 'apparel', label: 'Apparel' },
   { key: 'books', label: 'Books' },
 ];
 
@@ -57,6 +60,7 @@ const FILTERS_ZH = [
   { key: 'writing-desk', label: UI_ZH.objectsPage.catWriting },
   { key: 'talisman-objects', label: UI_ZH.objectsPage.catTalisman },
   { key: 'home-altar', label: UI_ZH.objectsPage.catHome },
+  { key: 'apparel', label: UI_ZH.objectsPage.catApparel },
   { key: 'books', label: UI_ZH.objectsPage.catBooks },
 ];
 

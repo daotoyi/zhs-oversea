@@ -142,6 +142,7 @@ export const UI_ZH = {
     catWriting: '文房',
     catTalisman: '礼器',
     catHome: '居家',
+    catApparel: '服饰',
     catBooks: '典籍',
     empty: '此类下暂无器物。',
   },
