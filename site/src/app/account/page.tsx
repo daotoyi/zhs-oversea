@@ -166,6 +166,9 @@ export default async function AccountPage() {
                             <div className="acct-order-right">
                               <span className={`acct-pill acct-pill-${o.status}`}>{status}</span>
                               <strong>{formatUsd(o.total)}</strong>
+                              <Link href={`/account/orders/${o.id}`} className="acct-link">
+                                {labels.viewOrder} →
+                              </Link>
                             </div>
                           </div>
                           <ul className="acct-order-items">

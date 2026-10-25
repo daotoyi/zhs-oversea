@@ -84,6 +84,23 @@ export function awardOrderPoints(input: { userId: string; orderId: string; total
   return award(input.userId, points, 'order_earn', input.orderId);
 }
 
+/**
+ * 退款回滚积分：把该单发放的积分原路扣回（ledger reason=refund）。
+ * 余额不会变成负数 —— award() 内部做了下限保护。
+ */
+export function reverseOrderPoints(userId: string, orderId: string): number | null {
+  // 幂等：同一订单只回滚一次，避免重复写入负数流水
+  if (awardedAlready(userId, 'refund', orderId)) return null;
+  const earned = get<{ delta: number }>(
+    `SELECT delta FROM points_ledger
+     WHERE user_id = ? AND ref = ? AND reason = 'order_earn'
+     ORDER BY created_at DESC LIMIT 1`,
+    [userId, orderId]
+  );
+  if (!earned || earned.delta <= 0) return null;
+  return award(userId, -earned.delta, 'refund', orderId, '退款回滚');
+}
+
 export function listLedger(userId: string, limit = 40) {
   return all<{
     delta: number;

@@ -213,13 +213,14 @@ export type AccountOrder = {
   status: string;
   coupon_code: string | null;
   tracking_no: string | null;
+  carrier: string | null;
   address: string | null;
   created_at: number;
   user_id: string | null;
 };
 
 const ORDER_COLS =
-  'id, stripe_session_id, email, customer_name, items, subtotal, discount, shipping, tax, total, currency, status, coupon_code, tracking_no, address, created_at, user_id';
+  'id, stripe_session_id, email, customer_name, items, subtotal, discount, shipping, tax, total, currency, status, coupon_code, tracking_no, carrier, address, created_at, user_id';
 
 /**
  * 会员订单：user_id 归属优先，未归属的历史订单按邮箱匹配。
@@ -250,6 +251,76 @@ export function orderStats(userId: string, email: string): { count: number; spen
     [userId, email.trim().toLowerCase()]
   );
   return { count: row?.n ?? 0, spent: row?.s ?? 0 };
+}
+
+/* ── 退款申请 ── */
+
+export type RefundRequest = {
+  id: string;
+  order_id: string;
+  user_id: string | null;
+  email: string;
+  reason: string;
+  amount: number;
+  /** pending 待处理 | approved 已批准 | rejected 已拒绝 */
+  status: string;
+  admin_note: string | null;
+  created_at: number;
+  handled_at: number | null;
+};
+
+export function createRefundRequest(input: {
+  orderId: string;
+  userId: string;
+  email: string;
+  reason: string;
+  amount: number;
+}): RefundRequest {
+  const row: RefundRequest = {
+    id: uid('rf'),
+    order_id: input.orderId,
+    user_id: input.userId,
+    email: input.email,
+    reason: input.reason,
+    amount: input.amount,
+    status: 'pending',
+    admin_note: null,
+    created_at: now(),
+    handled_at: null,
+  };
+  run(
+    `INSERT INTO refund_requests
+       (id, order_id, user_id, email, reason, amount, status, admin_note, created_at, handled_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      row.id,
+      row.order_id,
+      row.user_id,
+      row.email,
+      row.reason,
+      row.amount,
+      row.status,
+      row.admin_note,
+      row.created_at,
+      row.handled_at,
+    ]
+  );
+  return row;
+}
+
+/** 该订单最近一条退款申请 */
+export function getRefundRequestByOrder(orderId: string): RefundRequest | null {
+  return get<RefundRequest>(
+    'SELECT * FROM refund_requests WHERE order_id = ? ORDER BY created_at DESC LIMIT 1',
+    [orderId]
+  );
+}
+
+export function listRefundRequests(userId: string): RefundRequest[] {
+  return all<RefundRequest>(
+    'SELECT * FROM refund_requests WHERE user_id = ? ORDER BY created_at DESC',
+    [userId]
+  );
 }
 
 /* ── 一次性令牌（找回密码 / 邮箱验证）── */

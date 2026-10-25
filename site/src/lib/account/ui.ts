@@ -108,8 +108,46 @@ function buildLabels(en: boolean, tr: (s: string) => string) {
     orderStatusRefunded: L('Refunded', '已退款'),
     orderStatusDisputed: L('In review', '处理中'),
     orderStatusShipped: L('Shipped', '已发货'),
+    orderStatusDelivered: L('Delivered', '已送达'),
+    orderStatusCancelled: L('Cancelled', '已取消'),
     orderStatusPending: L('Pending', '待处理'),
     viewOrder: L('Details', '查看详情'),
+
+    /* ── 订单详情 ── */
+    orderDetailTitle: L('Order detail', '订单详情'),
+    orderPlacedAt: L('Placed on', '下单时间'),
+    logisticsTitle: L('Logistics', '物流'),
+    carrier: L('Carrier', '承运商'),
+    trackingNumber: L('Tracking number', '运单号'),
+    noTrackingYet: L('The tracking number appears here once the parcel is scanned.', '包裹扫描后，运单号会显示在这里。'),
+    etaTitle: L('Estimated arrival', '预计送达'),
+    etaRange: L('7–15 business days after dispatch', '发货后 7–15 个工作日'),
+    stepPlaced: L('Order placed', '已下单'),
+    stepPaid: L('Paid', '已付款'),
+    stepShipped: L('Shipped', '已发货'),
+    stepDelivered: L('Delivered', '已送达'),
+    itemsTitle: L('Items', '商品明细'),
+    addressTitle: L('Shipping address', '收货地址'),
+    noAddress: L('No address on file.', '暂无收货地址。'),
+    couponUsed: L('Coupon', '优惠券'),
+    paymentTitle: L('Payment', '支付方式'),
+    refundTitle: L('Refund', '退款'),
+    refundApply: L('Request a refund', '申请退款'),
+    refundReason: L('Why are you requesting a refund?', '请说明退款原因'),
+    refundReasonPh: L('Item arrived damaged, wrong item, changed my mind…', '商品破损、发错货、不想要了……'),
+    refundSubmit: L('Submit refund request', '提交退款申请'),
+    refundSubmitted: L('Refund request submitted', '退款申请已提交'),
+    refundPending: L(
+      'Your request is under review. We reply by email within two business days.',
+      '退款申请正在审核中，我们会在两个工作日内邮件回复。'
+    ),
+    refundApproved: L('Refund approved', '退款已批准'),
+    refundRejected: L('Refund declined', '退款未通过'),
+    refundAdminNote: L('Our reply', '我们的回复'),
+    refundNotEligible: L(
+      'This order cannot be refunded online. If something is wrong with it, contact us and we will make it right.',
+      '该订单无法在线退款。若商品有问题，请联系我们，我们负责解决。'
+    ),
     removeFavorite: L('Remove', '移除'),
     favoriteAdd: L('Save', '收藏'),
     favoriteSaved: L('Saved', '已收藏'),
@@ -128,6 +166,8 @@ function buildLabels(en: boolean, tr: (s: string) => string) {
     subtotal: L('Subtotal', '小计'),
     discount: L('Discount', '优惠'),
     shipping: L('Shipping', '运费'),
+    tax: L('Tax', '税费'),
+    freeShipping: L('Free', '免运费'),
     total: L('Total', '合计'),
 
     /* 错误 */
@@ -155,6 +195,10 @@ export function orderStatusLabel(status: string, labels: AccountLabels): string 
       return labels.orderStatusDisputed;
     case 'shipped':
       return labels.orderStatusShipped;
+    case 'delivered':
+      return labels.orderStatusDelivered;
+    case 'cancelled':
+      return labels.orderStatusCancelled;
     default:
       return labels.orderStatusPending;
   }

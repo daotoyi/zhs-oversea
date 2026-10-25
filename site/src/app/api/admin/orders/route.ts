@@ -27,9 +27,11 @@ export async function PATCH(req: Request) {
   const id = String(body.id ?? '');
   const status = String(body.status ?? '');
   if (!id) return bad('缺少订单号');
-  if (!['paid', 'shipped', 'refunded', 'cancelled'].includes(status)) return bad('非法状态');
-  updateOrderStatus(id, status, body.tracking_no ? String(body.tracking_no) : undefined);
+  if (!['paid', 'shipped', 'delivered', 'refunded', 'cancelled'].includes(status)) return bad('非法状态');
+  const carrier = body.carrier !== undefined ? String(body.carrier).slice(0, 80) : undefined;
+  const tracking = body.tracking_no !== undefined ? String(body.tracking_no).slice(0, 80) : undefined;
+  updateOrderStatus(id, status, tracking, carrier);
   persistSoon();
-  audit(auth.staff, 'order.status', id, `status=${status}`);
+  audit(auth.staff, 'order.status', id, `status=${status}${carrier ? ` carrier=${carrier}` : ''}`);
   return json({ ok: true });
 }

@@ -368,11 +368,70 @@ export function listOrders(opts: { status?: string; q?: string; limit?: number }
   return all<Order>(sql, vals);
 }
 
-export function updateOrderStatus(id: string, status: string, trackingNo?: string): void {
+export function updateOrderStatus(id: string, status: string, trackingNo?: string, carrier?: string): void {
+  const sets: string[] = ['status = ?'];
+  const vals: unknown[] = [status];
   if (trackingNo !== undefined) {
-    run('UPDATE orders SET status = ?, tracking_no = ? WHERE id = ?', [status, trackingNo, id]);
+    sets.push('tracking_no = ?');
+    vals.push(trackingNo);
+  }
+  if (carrier !== undefined) {
+    sets.push('carrier = ?');
+    vals.push(carrier);
+  }
+  vals.push(id);
+  run(`UPDATE orders SET ${sets.join(', ')} WHERE id = ?`, vals);
+}
+
+/* ── 退款申请（后台处理） ── */
+
+export type AdminRefundRequest = {
+  id: string;
+  order_id: string;
+  user_id: string | null;
+  email: string;
+  reason: string;
+  amount: number;
+  status: string;
+  admin_note: string | null;
+  created_at: number;
+  handled_at: number | null;
+  order_status: string | null;
+  order_total: number | null;
+  customer_name: string | null;
+};
+
+export function listRefundRequests(limit = 500): AdminRefundRequest[] {
+  return all<AdminRefundRequest>(
+    `SELECT r.*, o.status AS order_status, o.total AS order_total, o.customer_name AS customer_name
+     FROM refund_requests r
+     LEFT JOIN orders o ON o.id = r.order_id
+     ORDER BY CASE r.status WHEN 'pending' THEN 0 ELSE 1 END, r.created_at DESC
+     LIMIT ?`,
+    [limit]
+  );
+}
+
+export function getRefundRequest(id: string): AdminRefundRequest | null {
+  return get<AdminRefundRequest>(
+    `SELECT r.*, o.status AS order_status, o.total AS order_total, o.customer_name AS customer_name
+     FROM refund_requests r
+     LEFT JOIN orders o ON o.id = r.order_id
+     WHERE r.id = ?`,
+    [id]
+  );
+}
+
+export function setRefundRequestStatus(id: string, status: string, adminNote?: string): void {
+  if (adminNote !== undefined) {
+    run('UPDATE refund_requests SET status = ?, admin_note = ?, handled_at = ? WHERE id = ?', [
+      status,
+      adminNote,
+      now(),
+      id,
+    ]);
   } else {
-    run('UPDATE orders SET status = ? WHERE id = ?', [status, id]);
+    run('UPDATE refund_requests SET status = ?, handled_at = ? WHERE id = ?', [status, now(), id]);
   }
 }
 

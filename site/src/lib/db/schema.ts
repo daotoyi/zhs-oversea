@@ -253,6 +253,23 @@ CREATE TABLE IF NOT EXISTS pending_orders (
   completed_at INTEGER,
   order_id TEXT
 );
+
+/* ── 退款申请 ──
+   会员在订单详情页发起退款申请，后台在订单管理里批准或拒绝。
+   批准后订单状态置 refunded，并把该单发放的积分回滚
+   （points_ledger 记一笔 reason=refund 的负数）。 */
+CREATE TABLE IF NOT EXISTS refund_requests (
+  id TEXT PRIMARY KEY,
+  order_id TEXT NOT NULL,
+  user_id TEXT,
+  email TEXT NOT NULL,
+  reason TEXT NOT NULL DEFAULT '',
+  amount INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'pending',
+  admin_note TEXT,
+  created_at INTEGER NOT NULL,
+  handled_at INTEGER
+);
 `;
 
 /** 后台模块定义（权限粒度） */
