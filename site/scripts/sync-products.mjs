@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 /**
- * 同步商品目录到线上 DB —— 与国内文创站 shop.html 对齐
+ * 同步商品目录到线上 DB —— 整批对齐 shop.html 真实商品（CloudBase 同修汇商品库）
+ *
+ * 数据源：scripts/products-seed.json（由 /tmp/gen.py 依据 dy-api 真实商品生成，含本地图片路径与折算 USD 价格）
  *
  * 用法（在应用目录内运行，NODE_PATH 可解析到 node_modules/sql.js）：
  *   node scripts/sync-products.mjs            # 实际写入
@@ -8,10 +10,10 @@
  *   node scripts/sync-products.mjs --db /path/to/zhs.db
  *
  * 说明：
- *   - 前台 storefront 以「静态种子 + DB 覆盖」方式渲染，DB 行的 images/title 会盖掉种子。
- *     仅改种子不足以让线上图/标题变，所以此处直接改 DB。
- *   - 本脚本针对差异操作：保留商品刷新 shop 图并激活；书刷新图与标题；3 件新增全量插入；
- *     9 件国内站没有的商品置 archived（不删库）。
+ *   - 前台 storefront 以「静态种子 + DB 覆盖」方式渲染，DB 行的 images/price 会盖掉种子。
+ *     仅改种子不足以让线上图/标题/价格变，所以此处直接改 DB。
+ *   - 本脚本：① 归档所有「不在新目录」的 DB 商品（status='archived'，不删库）；
+ *             ② 对 23 件真实商品按 slug UPSERT（INSERT 或全字段 UPDATE）。
  *   - 重要：改完 DB 后必须重启应用进程（pm2 delete/restart）让它重新加载文件，
  *     否则常驻内存的进程会在下次落盘时把改动覆盖掉。
  */
@@ -38,93 +40,13 @@ if (!fs.existsSync(dbPath)) {
   process.exit(1);
 }
 
-const SHOP = 'https://zhenhesheng.cn/images/products';
-const img = (n) => `${SHOP}/product-${String(n).padStart(2, '0')}.png`;
-
-// 保留商品 → 仅刷新 shop 图 + 激活
-const IMAGE_REFRESH = [
-  ['cinnabar-hetian-jade-bracelet', img(1)],
-  ['red-sandalwood-prayer-beads', img(2)],
-  ['sandalwood-incense-set', img(3)],
-  ['gilt-lotus-incense-burner', img(4)],
-  ['duan-yan-four-treasures', img(5)],
-  ['bamboo-carved-paper-weights', img(6)],
-  ['yixing-clay-teapot', img(7)],
-  ['blue-white-gaiwan-set', img(8)],
-];
-
-// 书 → 刷新图 + 对齐标题
-const BOOK = {
-  slug: 'dao-de-jing-81-chapters',
-  title: 'The Dao De Jing, Silk Manuscript — Annotated',
-  title_zh: '帛书道德经注译',
-  image: img(12),
-};
-
-// 国内站有、海外站缺 → 全量插入
-const NEW_PRODUCTS = [
-  {
-    slug: 'brass-feng-shui-luopan',
-    title: 'Brass Feng Shui Compass (Luopan)',
-    title_zh: '黄铜风水罗盘',
-    category: 'home-altar',
-    tagline: 'A brass luopan with the twenty-four mountains, for reading a space.',
-    description:
-      'Cast brass with the full twenty-four mountain divisions, the eight trigrams and the ten stems engraved around the dial. Used in the traditional survey of a dwelling — to read orientation, light and the flow of a room. Rests on a small wooden stand, and the disc turns in the hand.',
-    price_usd: 4800,
-    compare_at_usd: null,
-    images: JSON.stringify([img(9)]),
-    status: 'active',
-    stock: 11,
-    sort_order: 90,
-    meta: JSON.stringify({ source: 'shop-alignment', weightGrams: 820, hsCode: '7323.91' }),
-  },
-  {
-    slug: 'natural-gourd-pendant',
-    title: 'Natural Gourd Pendant',
-    title_zh: '天然葫芦挂件',
-    category: 'home-altar',
-    tagline: 'A dried gourd, hung for the home.',
-    description:
-      'A naturally grown gourd, dried and fitted with a silk cord for hanging. In the old household practice a gourd by the door is kept for luck and to steady a space. Each one differs in shape, as gourds do — no two are alike.',
-    price_usd: 1800,
-    compare_at_usd: null,
-    images: JSON.stringify([img(10)]),
-    status: 'active',
-    stock: 16,
-    sort_order: 91,
-    meta: JSON.stringify({ source: 'shop-alignment', weightGrams: 120, hsCode: '1404.90' }),
-  },
-  {
-    slug: 'cotton-linen-meditation-robe',
-    title: 'Cotton & Linen Meditation Robe',
-    title_zh: '棉麻禅修服',
-    category: 'apparel',
-    tagline: 'Loose cotton-linen wear for sitting and moving.',
-    description:
-      'A loose robe in natural cotton and linen, breathable for sitting practice and gentle movement. Cut roomy so it does not bind at the shoulders or knees. Offered in undyed natural or charcoal, one size that fits most.',
-    price_usd: 6800,
-    compare_at_usd: null,
-    images: JSON.stringify([img(11)]),
-    status: 'active',
-    stock: 28,
-    sort_order: 92,
-    meta: JSON.stringify({ source: 'shop-alignment', weightGrams: 600, hsCode: '6211.43' }),
-  },
-];
-
-// 国内站没有、海外站独有的商品 → 归档（不删库）
-const ARCHIVE = [
-  'calligraphy-shang-shan-ruo-shui',
-  'calligraphy-zhi-xu-ji-ye',
-  'ai-cao-health-incense',
-  'lightning-struck-jujube-wood',
-  'three-harmonies-plaque',
-  'red-envelope-luck-set',
-  'heavenly-official-blessing',
-  'fortune-set-miao-jie',
-  'i-ching-sixty-four-hexagrams',
-];
+const SEED_PATH = path.join(__dirname, 'products-seed.json');
+if (!fs.existsSync(SEED_PATH)) {
+  console.error(`✗ 找不到种子文件: ${SEED_PATH}`);
+  process.exit(1);
+}
+const SEED = JSON.parse(fs.readFileSync(SEED_PATH, 'utf-8'));
+const seedSlugs = new Set(SEED.map((p) => p.slug));
 
 async function main() {
   const initSqlJs = (await import('sql.js')).default;
@@ -159,55 +81,40 @@ async function main() {
 
   const summary = [];
 
-  // 1) 刷新保留商品图 + 激活
-  for (const [slug, image] of IMAGE_REFRESH) {
-    const exists = getOne('SELECT slug FROM products WHERE slug = ?', [slug]);
-    if (!exists) { summary.push(`跳过(无此行): ${slug}`); continue; }
-    run("UPDATE products SET images = ?, status = 'active', updated_at = ? WHERE slug = ?", [JSON.stringify([image]), now, slug]);
-    summary.push(`刷新图+激活: ${slug}`);
+  // 1) 归档所有不在新目录里的旧商品
+  const existing = db.exec('SELECT slug FROM products');
+  const allSlugs = existing.length ? existing[0].values.map((r) => r[0]) : [];
+  for (const slug of allSlugs) {
+    if (seedSlugs.has(slug)) continue;
+    run("UPDATE products SET status = 'archived', updated_at = ? WHERE slug = ?", [now, slug]);
+    summary.push(`归档(不在新目录): ${slug}`);
   }
 
-  // 2) 书：图 + 标题 + 激活
-  {
-    const exists = getOne('SELECT slug FROM products WHERE slug = ?', [BOOK.slug]);
-    if (exists) {
-      run('UPDATE products SET images = ?, title = ?, title_zh = ?, status = \'active\', updated_at = ? WHERE slug = ?',
-        [JSON.stringify([BOOK.image]), BOOK.title, BOOK.title_zh, now, BOOK.slug]);
-      summary.push(`刷新图+标题+激活: ${BOOK.slug} → ${BOOK.title_zh}`);
-    } else {
-      summary.push(`跳过(无此行): ${BOOK.slug}`);
-    }
-  }
-
-  // 3) 插入 3 件新增（INSERT OR REPLACE，按 slug 幂等）
-  for (const p of NEW_PRODUCTS) {
-    const existing = getOne('SELECT slug FROM products WHERE slug = ?', [p.slug]);
-    if (existing) {
+  // 2) UPSERT 23 件真实商品
+  for (const p of SEED) {
+    const existingRow = getOne('SELECT slug, created_at FROM products WHERE slug = ?', [p.slug]);
+    if (existingRow) {
       run(
         `UPDATE products SET title=?, title_zh=?, tagline=?, description=?, category=?, price_usd=?,
           compare_at_usd=?, images=?, status=?, stock=?, sort_order=?, meta=?, updated_at=? WHERE slug=?`,
-        [p.title, p.title_zh, p.tagline, p.description, p.category, p.price_usd, p.compare_at_usd,
-         p.images, p.status, p.stock, p.sort_order, p.meta, now, p.slug]
+        [
+          p.title, p.title_zh, p.tagline, p.description, p.category, p.price_usd,
+          p.compare_at_usd, p.images, p.status, p.stock, p.sort_order, p.meta, now, p.slug,
+        ]
       );
-      summary.push(`更新已存在: ${p.slug}`);
+      summary.push(`更新已存在: ${p.slug} (${p.title_zh})`);
     } else {
       run(
         `INSERT INTO products (slug, title, title_zh, tagline, description, category, price_usd,
           compare_at_usd, images, status, stock, sort_order, meta, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [p.slug, p.title, p.title_zh, p.tagline, p.description, p.category, p.price_usd,
-         p.compare_at_usd, p.images, p.status, p.stock, p.sort_order, p.meta, now, now]
+        [
+          p.slug, p.title, p.title_zh, p.tagline, p.description, p.category, p.price_usd,
+          p.compare_at_usd, p.images, p.status, p.stock, p.sort_order, p.meta, now, now,
+        ]
       );
       summary.push(`插入新增: ${p.slug} (${p.title_zh})`);
     }
-  }
-
-  // 4) 归档 9 件独有商品
-  for (const slug of ARCHIVE) {
-    const exists = getOne('SELECT slug FROM products WHERE slug = ?', [slug]);
-    if (!exists) { summary.push(`归档跳过(无此行): ${slug}`); continue; }
-    run("UPDATE products SET status = 'archived', updated_at = ? WHERE slug = ?", [now, slug]);
-    summary.push(`归档: ${slug}`);
   }
 
   if (DRY) {
