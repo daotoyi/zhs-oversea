@@ -146,7 +146,6 @@ export async function getFooterStrings() {
       'A Beijing studio working with the Mawangdui silk manuscript tradition. Objects, texts and practice — carried to wherever someone wants to begin.',
       UI_ZH.footer.about
     ),
-    cnLink: t('中文站 zhenhesheng.cn →', UI_ZH.footer.cnLink),
     shopH: t('Shop', UI_ZH.footer.shopH),
     learnH: t('Learn', UI_ZH.footer.learnH),
     supportH: t('Support', UI_ZH.footer.supportH),

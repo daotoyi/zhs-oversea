@@ -450,7 +450,6 @@ export const UI_ZH = {
   footer: {
     about:
       '北京的一间作坊，以马王堆帛书一脉为业。器物、文本与修习——带给任何想从这里开始的人。',
-    cnLink: '中文站 zhenhesheng.cn →',
     shopH: '器物',
     learnH: '学问',
     supportH: '服务',

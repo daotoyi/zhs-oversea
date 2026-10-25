@@ -2,7 +2,6 @@ import Link from 'next/link';
 
 export function Footer({ strings }: { strings: {
   about: string;
-  cnLink: string;
   shopH: string;
   learnH: string;
   supportH: string;
@@ -37,9 +36,6 @@ export function Footer({ strings }: { strings: {
               </span>
             </div>
             <p>{strings.about}</p>
-            <Link className="cn-link" href="https://zhenhesheng.cn">
-              {strings.cnLink}
-            </Link>
           </div>
           <div className="foot-col">
             <h5>{strings.shopH}</h5>
