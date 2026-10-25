@@ -6,6 +6,7 @@ import { getNavStrings, getFooterStrings, getUi } from '@/lib/i18n';
 import { CHAPTERS } from '@/data/chapters';
 import { CHAPTERS_ZH } from '@/lib/i18n/zh-hans-content';
 import { HEXAGRAMS } from '@/data/hexagrams';
+import { HEXAGRAMS_ZH } from '@/lib/i18n/zh-hans-content';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
 
@@ -21,33 +22,30 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const HEX_ZH: Record<string, string> = {
-  qian: '乾', kun: '坤', kan: '坎', li: '離', xun: '巽', gen: '艮', zhen: '震', dui: '兌',
-};
-
-const HEX_EN = ['The Creative', 'The Receptive', 'The Abysmal', 'The Clinging', 'The Gentle', 'The Reedy', 'The Thunder', 'The Joyous'];
-const HEX_ZH_NAME = ['乾 · 健', '坤 · 顺', '坎 · 陷', '離 · 麗', '巽 · 逊', '艮 · 止', '震 · 动', '兌 · 悅'];
-const HEX_SYM = ['☰', '☷', '☵', '☲', '☴', '☶', '☳', '☱'];
-
 export default async function ClassicsPage() {
   const { locale, t } = await getUi();
   const navStrings = await getNavStrings();
   const footerStrings = await getFooterStrings();
 
   const chapterCount = Object.keys(CHAPTERS).length;
-  const hexKeys = Object.keys(HEXAGRAMS);
+  // 易经预览与道德经预览同规格：取前 8 卦，数据全部来自 HEXAGRAMS 单一来源
+  const hexKeys = Object.keys(HEXAGRAMS).slice(0, 8);
   const h = UI_ZH.classicsPage;
   const Z = (s: string) => (locale === 'en' ? s : toTraditional(s));
 
   const chapters = Object.keys(CHAPTERS).map(Number).sort((a, b) => a - b).slice(0, 10);
   const chapterData = chapters.map((n) => ({ n, ...CHAPTERS[n] }));
 
-  const hexCells = hexKeys.map((k, i) => ({
-    slug: k,
-    sym: HEX_SYM[i] ?? '☯',
-    zh: HEX_ZH[k] ?? '',
-    en: locale === 'en' ? HEX_EN[i] : HEX_ZH_NAME[i],
-  }));
+  const hexCells = hexKeys.map((k) => {
+    const hx = HEXAGRAMS[k];
+    const z = HEXAGRAMS_ZH[k];
+    return {
+      slug: k,
+      sym: hx.symbol,
+      zh: hx.zh,
+      en: locale === 'en' ? hx.en : (z?.en ?? hx.en),
+    };
+  });
 
   const parts = [
     { n: 1, title: 'What a chart actually is', zh: '四柱' },

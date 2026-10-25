@@ -38,8 +38,8 @@ export default async function YijingIndex() {
           </h1>
           <p style={{ fontSize: 15, color: 'var(--ash)', maxWidth: 560, lineHeight: 1.8, marginBottom: 48 }}>
             {t(
-              `The Book of Changes read as a living text rather than a fortune. ${keys.length} hexagrams are published so far; each carries the classical image and a reading.`,
-              `把《易经》当作活的文本读，而不是当作占卜之书。已刊 ${keys.length} 卦，每卦含古典象意与读法。`
+              'The Book of Changes read as a living text rather than a fortune. All sixty-four hexagrams, each with the classical image and a reading.',
+              '把《易经》当作活的文本读，而不是当作占卜之书。六十四卦俱全，每卦含古典象意与读法。'
             )}
           </p>
           <div className="hex-grid">
