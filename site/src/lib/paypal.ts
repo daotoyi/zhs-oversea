@@ -1,6 +1,10 @@
 /**
  * PayPal 服务端封装 —— 个人号即可（sandbox 先测，再翻 live）
  *
+ * 凭据优先从后台 settings 表读取（paypal_client_id / paypal_client_secret / paypal_env），
+ * 回退到环境变量 PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET / PAYPAL_ENV，
+ * 与 Google / Resend 的「数据库 > 环境变量」约定一致，后台填写即生效、无需重启。
+ *
  * 直接走 REST（不引 SDK），可控且易验证：
  *   1. 取 access token（Basic auth，缓存 ~9h）
  *   2. 建 order（intent=CAPTURE，金额来自 resolveCart，服务端权威）
@@ -12,27 +16,36 @@
  * 我们 discount=0、tax=0，item_total 用「折后小计」，金额与 value 一致。
  */
 
+import { resolve } from '@/lib/settings';
 import type { ResolvedCart } from '@/lib/checkout/core';
-
-const PAYPAL_ENV = process.env.PAYPAL_ENV === 'live' ? 'live' : 'sandbox';
-export const PAYPAL_BASE = PAYPAL_ENV === 'live' ? 'https://api.paypal.com' : 'https://api.sandbox.paypal.com';
-export const PAYPAL_MODE = PAYPAL_ENV;
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://zhenhesheng.com';
 
-let tokenCache: { token: string; expiresAt: number } | null = null;
+/** sandbox（测试）或 live（真实收款），运行期从 settings 表 / env 读取 */
+export function paypalMode(): string {
+  return (resolve('paypal_env', 'PAYPAL_ENV') ?? 'sandbox').toLowerCase();
+}
+
+function paypalBase(): string {
+  return paypalMode() === 'live' ? 'https://api.paypal.com' : 'https://api.sandbox.paypal.com';
+}
+
+let tokenCache: { token: string; expiresAt: number; base: string } | null = null;
 
 async function getAccessToken(): Promise<string> {
-  const clientId = process.env.PAYPAL_CLIENT_ID;
-  const secret = process.env.PAYPAL_CLIENT_SECRET;
+  const clientId = resolve('paypal_client_id', 'PAYPAL_CLIENT_ID');
+  const secret = resolve('paypal_client_secret', 'PAYPAL_CLIENT_SECRET');
   if (!clientId || !secret) {
-    throw new Error('PayPal is not configured — set PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET (and PAYPAL_ENV)');
+    throw new Error(
+      'PayPal is not configured — 后台「登录与邮件 / 支付」填 PAYPAL_CLIENT_ID / SECRET，或设置环境变量'
+    );
   }
-  if (tokenCache && tokenCache.expiresAt > Date.now() + 60_000) {
+  const base = paypalBase();
+  if (tokenCache && tokenCache.base === base && tokenCache.expiresAt > Date.now() + 60_000) {
     return tokenCache.token;
   }
   const basic = Buffer.from(`${clientId}:${secret}`).toString('base64');
-  const res = await fetch(`${PAYPAL_BASE}/v1/oauth2/token`, {
+  const res = await fetch(`${base}/v1/oauth2/token`, {
     method: 'POST',
     headers: {
       Authorization: `Basic ${basic}`,
@@ -45,7 +58,7 @@ async function getAccessToken(): Promise<string> {
     throw new Error(`PayPal auth failed: ${res.status} ${t}`);
   }
   const json = (await res.json()) as { access_token: string; expires_in: number };
-  tokenCache = { token: json.access_token, expiresAt: Date.now() + json.expires_in * 1000 };
+  tokenCache = { token: json.access_token, expiresAt: Date.now() + json.expires_in * 1000, base };
   return json.access_token;
 }
 
@@ -60,7 +73,8 @@ export type PayPalAddress = {
 
 export async function createPayPalOrder(cart: ResolvedCart): Promise<{ id: string; approveUrl: string }> {
   const token = await getAccessToken();
-  const res = await fetch(`${PAYPAL_BASE}/v2/checkout/orders`, {
+  const base = paypalBase();
+  const res = await fetch(`${base}/v2/checkout/orders`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -119,7 +133,8 @@ export async function createPayPalOrder(cart: ResolvedCart): Promise<{ id: strin
 
 export async function getPayPalOrder(orderId: string): Promise<any> {
   const token = await getAccessToken();
-  const res = await fetch(`${PAYPAL_BASE}/v2/checkout/orders/${orderId}`, {
+  const base = paypalBase();
+  const res = await fetch(`${base}/v2/checkout/orders/${orderId}`, {
     method: 'GET',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
   });
@@ -133,7 +148,8 @@ export async function getPayPalOrder(orderId: string): Promise<any> {
 /** 捕获资金（真正收款）。409 表示已捕获，按幂等视为成功并回查。 */
 export async function capturePayPalOrder(orderId: string): Promise<any> {
   const token = await getAccessToken();
-  const res = await fetch(`${PAYPAL_BASE}/v2/checkout/orders/${orderId}/capture`, {
+  const base = paypalBase();
+  const res = await fetch(`${base}/v2/checkout/orders/${orderId}/capture`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,

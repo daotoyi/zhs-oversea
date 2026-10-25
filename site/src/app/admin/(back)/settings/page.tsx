@@ -4,6 +4,7 @@ import { credentials, missingFields } from '@/lib/account/oauth';
 import { mailConfig, missingMailConfig } from '@/lib/mail/config';
 import { listSuppressions, suppressionCount } from '@/lib/mail/suppression';
 import OAuthSettings from '@/components/admin/OAuthSettings';
+import PayPalSettings from '@/components/admin/PayPalSettings';
 import MailSettings from '@/components/admin/MailSettings';
 
 export const dynamic = 'force-dynamic';
@@ -44,6 +45,23 @@ export default async function SettingsPage() {
               process.env.APPLE_KEY_ID &&
               process.env.APPLE_PRIVATE_KEY
           ),
+        }}
+      />
+
+      <hr className="rule" style={{ margin: '30px 0 20px' }} />
+      <h2 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>支付通道（PayPal）</h2>
+      <PayPalSettings
+        initial={{
+          clientId: stored.paypal_client_id ?? '',
+          secretSet: Boolean(stored.paypal_client_secret || process.env.PAYPAL_CLIENT_SECRET),
+          secretTail: (stored.paypal_client_secret || process.env.PAYPAL_CLIENT_SECRET || '').slice(-4),
+          env: stored.paypal_env || process.env.PAYPAL_ENV || 'sandbox',
+          envFromSettings: Boolean(stored.paypal_env),
+          envFromEnv: Boolean(process.env.PAYPAL_ENV),
+          missing:
+            stored.paypal_client_id && (stored.paypal_client_secret || process.env.PAYPAL_CLIENT_SECRET)
+              ? []
+              : ['Client ID', 'Client Secret'],
         }}
       />
 

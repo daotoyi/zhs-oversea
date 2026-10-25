@@ -9,12 +9,13 @@ import type { NextRequest } from 'next/server';
 export const runtime = 'nodejs';
 
 type Body = {
-  provider?: 'google' | 'apple';
+  provider?: 'google' | 'apple' | 'paypal';
   clientId?: string;
   clientSecret?: string;
   teamId?: string;
   keyId?: string;
   privateKey?: string;
+  paypalEnv?: string;
   clear?: boolean;
 };
 
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
   await initDb();
   const body = (await req.json().catch(() => ({}))) as Body;
   const provider = body.provider;
-  if (provider !== 'google' && provider !== 'apple') return bad('provider 无效');
+  if (provider !== 'google' && provider !== 'apple' && provider !== 'paypal') return bad('provider 无效');
 
   const clean = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
 
@@ -41,11 +42,15 @@ export async function POST(req: NextRequest) {
     if (provider === 'google') {
       deleteSetting('oauth_google_client_id');
       deleteSetting('oauth_google_client_secret');
-    } else {
+    } else if (provider === 'apple') {
       deleteSetting('oauth_apple_client_id');
       deleteSetting('oauth_apple_team_id');
       deleteSetting('oauth_apple_key_id');
       deleteSetting('oauth_apple_private_key');
+    } else {
+      deleteSetting('paypal_client_id');
+      deleteSetting('paypal_client_secret');
+      deleteSetting('paypal_env');
     }
     persistSoon();
     audit(guard.staff, 'oauth.clear', provider, '清除第三方登录凭据');
@@ -60,7 +65,7 @@ export async function POST(req: NextRequest) {
     if (clientId) setSetting('oauth_google_client_id', clientId, guard.staff.username);
     const secret = clean(body.clientSecret);
     if (secret) setSetting('oauth_google_client_secret', secret, guard.staff.username);
-  } else {
+  } else if (provider === 'apple') {
     const clientId = clean(body.clientId);
     const teamId = clean(body.teamId);
     const keyId = clean(body.keyId);
@@ -79,6 +84,13 @@ export async function POST(req: NextRequest) {
 
     const err = await validateAppleKey();
     if (err) return bad(`Apple 配置未通过校验：${err}`);
+  } else {
+    const clientId = clean(body.clientId);
+    if (clientId) setSetting('paypal_client_id', clientId, guard.staff.username);
+    const secret = clean(body.clientSecret);
+    if (secret) setSetting('paypal_client_secret', secret, guard.staff.username);
+    const env = clean(body.paypalEnv);
+    if (env === 'sandbox' || env === 'live') setSetting('paypal_env', env, guard.staff.username);
   }
 
   persistSoon();
@@ -86,8 +98,11 @@ export async function POST(req: NextRequest) {
 
   return json({
     ok: true,
-    redirectUri: `${publicBaseUrl(req)}/api/auth/oauth/${provider}/callback`,
-    configured: credentials(provider),
+    redirectUri:
+      provider === 'paypal'
+        ? `${publicBaseUrl(req)}/api/webhooks/paypal`
+        : `${publicBaseUrl(req)}/api/auth/oauth/${provider}/callback`,
+    configured: provider === 'paypal' ? true : credentials(provider),
   });
 }
 
