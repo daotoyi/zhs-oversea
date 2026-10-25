@@ -27,7 +27,9 @@ export function paypalMode(): string {
 }
 
 function paypalBase(): string {
-  return paypalMode() === 'live' ? 'https://api.paypal.com' : 'https://api.sandbox.paypal.com';
+  // PayPal 官方现行生产端点为 api-m.paypal.com（老 api.paypal.com 仍兼容但非推荐值）。
+  // 贝宝支付(北京)统一账户走中国开发者门户 paypal.cn/portal/developer 取得的 Live 凭据同样用此端点。
+  return paypalMode() === 'live' ? 'https://api-m.paypal.com' : 'https://api.sandbox.paypal.com';
 }
 
 let tokenCache: { token: string; expiresAt: number; base: string } | null = null;
