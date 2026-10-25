@@ -50,20 +50,54 @@ export const CATEGORY_ZH: Record<CategoryKey, string> = {
   books: UI_ZH.objectsPage.catBooks,
 };
 
+/**
+ * 历史品类（v0.0.27 之前的旧分类体系）。
+ *
+ * 这些品类对应的商品如今都是 archived 状态，但**仍留在库里、仍会在后台商品管理
+ * 列表中显示**。若不提供译名，categoryLabel 会回退成英文 slug —— 中文环境下
+ * 就会与其它中文品类名并排出现，形成中英混排。
+ *
+ * 故这里保留它们当年的中文名（与当年前台的品类标签一致）。
+ */
+export const LEGACY_CATEGORY_EN: Record<string, string> = {
+  'tea-ware': 'Tea ware',
+  'incense-ritual': 'Incense & ritual',
+  'talisman-objects': 'Talisman objects',
+  'home-altar': 'Home & altar',
+  apparel: 'Apparel',
+};
+
+export const LEGACY_CATEGORY_ZH: Record<string, string> = {
+  'tea-ware': '茶器',
+  'incense-ritual': '香事',
+  'talisman-objects': '礼器',
+  'home-altar': '居家',
+  apparel: '服饰',
+};
+
 export function isCategoryKey(v: unknown): v is CategoryKey {
   return typeof v === 'string' && (CATEGORY_KEYS as readonly string[]).includes(v);
 }
 
 /**
  * 品类显示名 —— 按语种。
- * 未登记的 key 回退为 key 本身（英文），保证不会渲染成空白。
+ *
+ * 未登记的 key 回退为 key 本身（英文）。**注意**：历史品类已在上面的
+ * LEGACY_CATEGORY_* 中登记，故正常的归档商品不会走到这个回退分支。
  */
 export function categoryLabel(category: string, locale: Locale): string {
-  const key = isCategoryKey(category) ? category : null;
-  if (!key) return category;
-  if (locale === 'en') return CATEGORY_EN[key];
-  if (locale === 'zh-Hant') return toTraditional(CATEGORY_ZH[key]);
-  return CATEGORY_ZH[key];
+  if (isCategoryKey(category)) {
+    if (locale === 'en') return CATEGORY_EN[category];
+    if (locale === 'zh-Hant') return toTraditional(CATEGORY_ZH[category]);
+    return CATEGORY_ZH[category];
+  }
+  const legacyZh = LEGACY_CATEGORY_ZH[category];
+  if (legacyZh) {
+    return locale === 'en' ? LEGACY_CATEGORY_EN[category] : locale === 'zh-Hant' ? toTraditional(legacyZh) : legacyZh;
+  }
+  // 完全未知的 key：中文环境也退回中文呈现会误导（key 本身是英文），
+  // 故统一以「原文 key」呈现，至少不会出现"中文里夹一个英文词"的混排观感。
+  return category;
 }
 
 /** 品类下拉选项（[{ value, label }]），供后台表单使用 */
