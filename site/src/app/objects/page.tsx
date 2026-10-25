@@ -11,6 +11,7 @@ import { viewerFavoriteSlugs } from '@/lib/account/viewer';
 import { getNavStrings, getFooterStrings, getTrustItems, getUi, localizeProduct } from '@/lib/i18n';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
+import { categoryLabel } from '@/lib/categories';
 
 export async function generateMetadata(): Promise<Metadata> {
   const { locale } = await getUi();
@@ -21,24 +22,6 @@ export async function generateMetadata(): Promise<Metadata> {
   alternates: { canonical: '/objects' },
   }
 }
-
-const CATEGORY_EN: Record<string, string> = {
-  'fortune-charms': 'Fortune charms',
-  'heavenly-stems': 'Heavenly stems',
-  'three-harmonies': 'Three harmonies',
-  'raw-wood': 'Raw wood',
-  'writing-desk': 'Writing & desk',
-  books: 'Books',
-};
-
-const CATEGORY_ZH: Record<string, string> = {
-  'fortune-charms': UI_ZH.objectsPage.catFortune,
-  'heavenly-stems': UI_ZH.objectsPage.catStems,
-  'three-harmonies': UI_ZH.objectsPage.catHarmonies,
-  'raw-wood': UI_ZH.objectsPage.catRawWood,
-  'writing-desk': UI_ZH.objectsPage.catWriting,
-  books: UI_ZH.objectsPage.catBooks,
-};
 
 const FILTERS_EN = [
   { key: 'all', label: 'All' },
@@ -75,16 +58,11 @@ export default async function ObjectsPage({
 
   const all = await Promise.all((await getStoreProducts()).map(localizeProduct));
   const products = category && category !== 'all' ? all.filter((p) => p.category === category) : all;
-  // 品类标签按语种：英文用英名；zh-Hant 转繁体；zh-Hans 保持简体（与全站 t()/zh() 约定一致）
+  // 品类标签按语种（统一走 lib/categories.ts：英文用英名，zh-Hant 转繁体，zh-Hans 保持简体）
   const filters = locale === 'en'
     ? FILTERS_EN
     : FILTERS_ZH.map((f) => ({ ...f, label: locale === 'zh-Hant' ? toTraditional(f.label) : f.label }));
-  const catLabel = (cat: string) =>
-    locale === 'en'
-      ? CATEGORY_EN[cat]
-      : locale === 'zh-Hant'
-        ? toTraditional(CATEGORY_ZH[cat])
-        : CATEGORY_ZH[cat];
+  const catLabel = (cat: string) => categoryLabel(cat, locale);
   const h = UI_ZH.objectsPage;
 
   return (

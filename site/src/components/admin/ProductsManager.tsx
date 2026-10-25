@@ -3,6 +3,8 @@
 import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/admin/client';
+import { CATEGORY_KEYS, categoryLabel, categoryOptions } from '@/lib/categories';
+import type { Locale } from '@/lib/i18n/config';
 
 type Prod = {
   slug: string;
@@ -19,17 +21,6 @@ type Prod = {
   stock: number;
 };
 
-// 与 shop 网址（CloudBase 真实分类）保持一致；同时必须与 lib/types.ts 的 ProductCategory
-// 完全一致，否则存进去的品类前台筛选（/objects?category=...）匹配不到，商品会从对应分类消失。
-const CATS = ['fortune-charms', 'heavenly-stems', 'three-harmonies', 'raw-wood', 'writing-desk', 'books'];
-const CAT_LABELS: Record<string, string> = {
-  'fortune-charms': '开运饰品',
-  'heavenly-stems': '天干十义',
-  'three-harmonies': '三合文创',
-  'raw-wood': '原木文创',
-  'writing-desk': '文房雅器',
-  books: '典籍',
-};
 const STATUSES = ['active', 'draft', 'archived'];
 
 function usd(cents: number) {
@@ -43,6 +34,10 @@ export default function ProductsManager({ initial, lang = 'en' }: { initial: Pro
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState<{ t: 'ok' | 'err'; m: string } | null>(null);
+
+  // 品类名跟随全站语言（NEXT_LOCIE）：要么全英文、要么全中文，不混排
+  const locale: Locale = lang === 'zh-Hans' || lang === 'zh-Hant' ? lang : 'en';
+  const catOpts = categoryOptions(locale);
 
   function openEdit(p: Prod) {
     setEditing(p);
@@ -161,7 +156,7 @@ export default function ProductsManager({ initial, lang = 'en' }: { initial: Pro
               <tr key={p.slug}>
                 <td style={{ whiteSpace: 'nowrap' }}>{p.collection || '—'}</td>
                 <td>{(() => { const t = displayTitle(p); return <><div>{t.main}</div><div style={{ fontSize: 11, color: 'var(--ash)' }}>{t.sub}</div></>; })()}</td>
-                <td>{CAT_LABELS[p.category] ?? p.category}</td>
+                <td>{categoryLabel(p.category, locale)}</td>
                 <td className="num">{usd(p.price_usd)}</td>
                 <td className="num">{p.stock}</td>
                 <td>
@@ -206,7 +201,7 @@ export default function ProductsManager({ initial, lang = 'en' }: { initial: Pro
                   </label>
                   <label>品类
                     <select value={form.category} onChange={(e) => set('category', e.target.value)}>
-                      {CATS.map((c) => <option key={c} value={c}>{CAT_LABELS[c] ?? c}</option>)}
+                      {catOpts.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                     </select>
                   </label>
                 </div>

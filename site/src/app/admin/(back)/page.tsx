@@ -4,6 +4,9 @@ import {
 } from '@/lib/admin/dao';
 import { seedCatalogIfEmpty } from '@/lib/admin/seed';
 import { LineChart, DonutChart } from '@/components/admin/Charts';
+import { categoryLabel } from '@/lib/categories';
+import { LOCALE_COOKIE, isLocale, DEFAULT_LOCALE } from '@/lib/i18n/config';
+import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,10 +18,6 @@ const CAT_COLORS: Record<string, string> = {
   'writing-desk': '#3F6F8F',
   books: '#5C6B58',
 };
-const CAT_LABELS: Record<string, string> = {
-  'fortune-charms': '开运饰品', 'heavenly-stems': '天干十义', 'three-harmonies': '三合文创',
-  'raw-wood': '原木文创', 'writing-desk': '文房雅器', books: '典籍',
-};
 
 function usd(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
@@ -27,6 +26,14 @@ function usd(cents: number) {
 export default async function AdminDashboard() {
   await initDb();
   seedCatalogIfEmpty();
+
+  // 品类名跟随全站语言（NEXT_LOCALE）：要么全英文、要么全中文
+  const cookieStore = await cookies();
+  const localeRaw = cookieStore.get(LOCALE_COOKIE)?.value;
+  const locale = localeRaw && isLocale(localeRaw) ? localeRaw : DEFAULT_LOCALE;
+  // 饼图里的两个非品类分组也要跟随语种，避免中英混排
+  const otherLabel = locale === 'en' ? 'Other' : locale === 'zh-Hant' ? '其他' : '其他';
+  const mixedLabel = locale === 'en' ? 'Mixed' : locale === 'zh-Hant' ? '混合' : '混合';
 
   const products = listProducts(true);
   const orders = listOrders({ limit: 1000 });
@@ -68,7 +75,9 @@ export default async function AdminDashboard() {
     byCat[cat] = (byCat[cat] ?? 0) + o.total;
   }
   const donut = Object.entries(byCat).map(([cat, v]) => ({
-    label: CAT_LABELS[cat] ?? cat, value: Math.round(v / 100), color: CAT_COLORS[cat] ?? '#9E3B2E',
+    label: cat === '其他' ? otherLabel : cat === '混合' ? mixedLabel : categoryLabel(cat, locale),
+    value: Math.round(v / 100),
+    color: CAT_COLORS[cat] ?? '#9E3B2E',
   }));
 
   const statusCount: Record<string, number> = {};

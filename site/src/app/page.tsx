@@ -10,24 +10,7 @@ import { viewerFavoriteSlugs } from '@/lib/account/viewer';
 import { getNavStrings, getFooterStrings, getUi, localizeProduct } from '@/lib/i18n';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
-
-const CATEGORY_EN: Record<string, string> = {
-  'fortune-charms': 'Fortune charms',
-  'heavenly-stems': 'Heavenly stems',
-  'three-harmonies': 'Three harmonies',
-  'raw-wood': 'Raw wood',
-  'writing-desk': 'Writing & desk',
-  books: 'Books',
-};
-
-const CATEGORY_ZH: Record<string, string> = {
-  'fortune-charms': UI_ZH.objectsPage.catFortune,
-  'heavenly-stems': UI_ZH.objectsPage.catStems,
-  'three-harmonies': UI_ZH.objectsPage.catHarmonies,
-  'raw-wood': UI_ZH.objectsPage.catRawWood,
-  'writing-desk': UI_ZH.objectsPage.catWriting,
-  books: UI_ZH.objectsPage.catBooks,
-};
+import { categoryLabel } from '@/lib/categories';
 
 export default async function HomePage() {
   const { locale, t } = await getUi();
@@ -39,13 +22,8 @@ export default async function HomePage() {
   const favSlugs = await viewerFavoriteSlugs();
   const h = UI_ZH.home;
 
-  // 品类标签按语种：英文用英名；zh-Hant 转繁体；zh-Hans 保持简体（与全站 t()/zh() 约定一致）
-  const catLabel = (cat: string) =>
-    locale === 'en'
-      ? CATEGORY_EN[cat]
-      : locale === 'zh-Hant'
-        ? toTraditional(CATEGORY_ZH[cat])
-        : CATEGORY_ZH[cat];
+  // 品类标签按语种（统一走 lib/categories.ts）
+  const catLabel = (cat: string) => categoryLabel(cat, locale);
 
   const hexRows: [string, string, string][] = [
     ['☰', 'The Creative', '乾'],

@@ -15,6 +15,7 @@ import { accountLabels } from '@/lib/account/ui';
 import { localizeProduct, getNavStrings, getFooterStrings, getUi } from '@/lib/i18n';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
+import { CATEGORY_KEYS, CATEGORY_EN, CATEGORY_ZH } from '@/lib/categories';
 
 export async function generateStaticParams() {
   const { getProducts } = await import('@/lib/products');
@@ -109,14 +110,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       ]
     : h.assurances.map(toTraditional);
 
-  const categories: Record<string, [string, string]> = {
-    'fortune-charms': ['Fortune charms', UI_ZH.objectsPage.catFortune],
-    'heavenly-stems': ['Heavenly stems', UI_ZH.objectsPage.catStems],
-    'three-harmonies': ['Three harmonies', UI_ZH.objectsPage.catHarmonies],
-    'raw-wood': ['Raw wood', UI_ZH.objectsPage.catRawWood],
-    'writing-desk': ['Writing & desk', UI_ZH.objectsPage.catWriting],
-    books: ['Books', UI_ZH.objectsPage.catBooks],
-  };
+  // 品类名统一走 lib/categories.ts：英文用英名，zh-Hant 转繁体，zh-Hans 保持简体
+  const categories: Record<string, [string, string]> = {};
+  for (const key of CATEGORY_KEYS) {
+    categories[key] = [
+      CATEGORY_EN[key],
+      locale === 'zh-Hant' ? toTraditional(CATEGORY_ZH[key]) : CATEGORY_ZH[key],
+    ];
+  }
 
   return (
     <>
