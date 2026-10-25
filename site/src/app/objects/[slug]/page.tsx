@@ -8,6 +8,7 @@ import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { AddToCart } from '@/components/AddToCart';
 import { FavoriteHeart } from '@/components/account/FavoriteHeart';
+import { ProductGallery } from '@/components/ProductGallery';
 import { currentUser } from '@/lib/account/auth';
 import { isFavorite } from '@/lib/account/dao';
 import { accountLabels } from '@/lib/account/ui';
@@ -133,18 +134,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </nav>
 
           <div className="pdp">
-            <div className="pdp-media">
-              <div className="pdp-main">
-                <img src={product.images[0]} alt={product.loc.title} />
-              </div>
-              <div className="pdp-thumbs">
-                {product.images.map((img) => (
-                  <div key={img} className="pdp-thumb">
-                    <img src={img} alt="" />
-                  </div>
-                ))}
-              </div>
-            </div>
+            <ProductGallery images={product.images} title={product.loc.title} />
 
             <div className="pdp-info">
               <div className="obj-cat">{product.titleZh}</div>
