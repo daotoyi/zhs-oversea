@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS products (
   tagline TEXT,
   description TEXT,
   category TEXT NOT NULL,
+  collection TEXT,
   price_usd INTEGER NOT NULL,
   compare_at_usd INTEGER,
   images TEXT NOT NULL DEFAULT '[]',

@@ -11,6 +11,7 @@ type Prod = {
   tagline: string | null;
   description: string | null;
   category: string;
+  collection: string | null;
   price_usd: number;
   compare_at_usd: number | null;
   images: string;
@@ -50,6 +51,7 @@ export default function ProductsManager({ initial, lang = 'en' }: { initial: Pro
     try { imgs = JSON.parse(p.images || '[]'); } catch { imgs = []; }
     setForm({
       title: p.title, title_zh: p.title_zh ?? '', category: p.category,
+      collection: p.collection ?? '',
       tagline: p.tagline ?? '', description: p.description ?? '',
       images: imgs.join('\n'),
       price: String(p.price_usd / 100), compare_at: p.compare_at_usd ? String(p.compare_at_usd / 100) : '',
@@ -61,7 +63,8 @@ export default function ProductsManager({ initial, lang = 'en' }: { initial: Pro
     setCreating(true);
     setEditing(null);
     setForm({
-      title: '', title_zh: '', category: 'fortune-charms', tagline: '', description: '', images: '',
+      title: '', title_zh: '', category: 'fortune-charms', collection: '',
+      tagline: '', description: '', images: '',
       price: '', compare_at: '', stock: '0', status: 'draft',
     });
     setMsg(null);
@@ -79,6 +82,7 @@ export default function ProductsManager({ initial, lang = 'en' }: { initial: Pro
       title: form.title.trim(),
       title_zh: form.title_zh.trim() || null,
       category: form.category,
+      collection: form.collection?.trim() || null,
       tagline: form.tagline?.trim() || null,
       description: form.description?.trim() || null,
       images: imageList,
@@ -123,6 +127,11 @@ export default function ProductsManager({ initial, lang = 'en' }: { initial: Pro
 
   const showForm = editing || creating;
 
+  // 已有的合集名 —— 供弹窗输入框做下拉建议，避免同义写法各写各的
+  const collectionOptions = Array.from(
+    new Set(initial.map((p) => p.collection).filter((c): c is string => !!c && c.trim() !== ''))
+  ).sort();
+
   // Esc 关闭弹窗
   useEffect(() => {
     if (!showForm) return;
@@ -145,11 +154,12 @@ export default function ProductsManager({ initial, lang = 'en' }: { initial: Pro
 
       <div className="adm-card">
         <table className="adm-table">
-          <thead><tr><th>标题</th><th>品类</th><th className="num">价格</th><th className="num">库存</th><th>状态</th><th className="actions">操作</th></tr></thead>
+          <thead><tr><th>合集</th><th>标题</th><th>品类</th><th className="num">价格</th><th className="num">库存</th><th>状态</th><th className="actions">操作</th></tr></thead>
           <tbody>
-            {initial.length === 0 && <tr><td colSpan={6}><div className="adm-empty">暂无商品</div></td></tr>}
+            {initial.length === 0 && <tr><td colSpan={7}><div className="adm-empty">暂无商品</div></td></tr>}
             {initial.map((p) => (
               <tr key={p.slug}>
+                <td style={{ whiteSpace: 'nowrap' }}>{p.collection || '—'}</td>
                 <td>{(() => { const t = displayTitle(p); return <><div>{t.main}</div><div style={{ fontSize: 11, color: 'var(--ash)' }}>{t.sub}</div></>; })()}</td>
                 <td>{CAT_LABELS[p.category] ?? p.category}</td>
                 <td className="num">{usd(p.price_usd)}</td>
@@ -183,22 +193,35 @@ export default function ProductsManager({ initial, lang = 'en' }: { initial: Pro
                   <label>标题（中文）<input value={form.title_zh} onChange={(e) => set('title_zh', e.target.value)} /></label>
                 </div>
                 <div className="adm-form-row">
+                  <label>合集
+                    <input
+                      list="adm-collections"
+                      value={form.collection ?? ''}
+                      onChange={(e) => set('collection', e.target.value)}
+                      placeholder="如：道系文创"
+                    />
+                    <datalist id="adm-collections">
+                      {collectionOptions.map((c) => <option key={c} value={c} />)}
+                    </datalist>
+                  </label>
                   <label>品类
                     <select value={form.category} onChange={(e) => set('category', e.target.value)}>
                       {CATS.map((c) => <option key={c} value={c}>{CAT_LABELS[c] ?? c}</option>)}
                     </select>
                   </label>
+                </div>
+                <div className="adm-form-row">
                   <label>状态
                     <select value={form.status} onChange={(e) => set('status', e.target.value)}>
                       {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </label>
+                  <label>库存数量<input value={form.stock} onChange={(e) => set('stock', e.target.value)} inputMode="numeric" /></label>
                 </div>
                 <div className="adm-form-row">
                   <label>价格（美元）<input value={form.price} onChange={(e) => set('price', e.target.value)} inputMode="decimal" /></label>
                   <label>划线价（美元，可选）<input value={form.compare_at} onChange={(e) => set('compare_at', e.target.value)} inputMode="decimal" /></label>
                 </div>
-                <label>库存数量<input value={form.stock} onChange={(e) => set('stock', e.target.value)} inputMode="numeric" /></label>
                 <label>卖点一句话（前台卡片副标题）<input value={form.tagline} onChange={(e) => set('tagline', e.target.value)} /></label>
                 <label>详情描述（前台商品页正文）<textarea rows={4} value={form.description} onChange={(e) => set('description', e.target.value)} /></label>
                 <label>图片路径（每行一个，如 /products/xxx.jpg）<textarea rows={3} value={form.images} onChange={(e) => set('images', e.target.value)} /></label>

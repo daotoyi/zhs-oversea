@@ -34,6 +34,8 @@ export type Product = {
   title: string;
   titleZh: string;
   category: ProductCategory;
+  /** 合集：同一系列/套装商品的分组名（后台可编辑） */
+  collection?: string;
   /** 一句话价值主张，英文 */
   tagline: string;
   description: string;

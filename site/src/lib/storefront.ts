@@ -19,6 +19,7 @@ type DbRow = {
   tagline: string | null;
   description: string | null;
   category: string;
+  collection: string | null;
   price_usd: number;
   compare_at_usd: number | null;
   images: string;
@@ -27,7 +28,7 @@ type DbRow = {
 };
 
 const SELECT =
-  'slug, title, title_zh, tagline, description, category, price_usd, compare_at_usd, images, status, stock';
+  'slug, title, title_zh, tagline, description, category, collection, price_usd, compare_at_usd, images, status, stock';
 
 const VALID_CATEGORIES: ProductCategory[] = [
   'fortune-charms',
@@ -64,6 +65,7 @@ function merge(base: Product, row?: DbRow): Product {
     tagline: row.tagline || base.tagline,
     description: row.description || base.description,
     category,
+    collection: row.collection || base.collection,
     priceUsd,
     compareAtUsd: row.compare_at_usd != null ? Number(row.compare_at_usd) : base.compareAtUsd,
     images: parseImages(row.images, base.images),

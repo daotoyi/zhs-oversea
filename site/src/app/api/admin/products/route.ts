@@ -32,6 +32,7 @@ export async function POST(req: Request) {
     tagline: body.tagline ? String(body.tagline) : undefined,
     description: body.description ? String(body.description) : undefined,
     category,
+    collection: body.collection ? String(body.collection) : null,
     price_usd: price,
     compare_at_usd: body.compare_at_usd ? Number(body.compare_at_usd) : null,
     images: Array.isArray(body.images) ? body.images.map(String) : [],

@@ -95,6 +95,7 @@ function migrate(database: Database): void {
   ensureColumn(database, 'orders', 'payment_provider', "TEXT DEFAULT 'stripe'");
   ensureColumn(database, 'orders', 'provider_ref', 'TEXT');
   ensureColumn(database, 'orders', 'carrier', 'TEXT');
+  ensureColumn(database, 'products', 'collection', 'TEXT');
 }
 
 function ensureColumn(database: Database, table: string, column: string, ddl: string): void {

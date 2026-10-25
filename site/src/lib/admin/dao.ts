@@ -209,6 +209,7 @@ export type Product = {
   tagline: string | null;
   description: string | null;
   category: string;
+  collection: string | null;
   price_usd: number;
   compare_at_usd: number | null;
   images: string;
@@ -238,6 +239,7 @@ export function saveProduct(input: {
   tagline?: string;
   description?: string;
   category: string;
+  collection?: string | null;
   price_usd: number;
   compare_at_usd?: number | null;
   images: string[];
@@ -250,21 +252,23 @@ export function saveProduct(input: {
   const existing = findProduct(slug);
   if (existing) {
     run(
-      `UPDATE products SET title=?, title_zh=?, tagline=?, description=?, category=?, price_usd=?,
+      `UPDATE products SET title=?, title_zh=?, tagline=?, description=?, category=?, collection=?, price_usd=?,
         compare_at_usd=?, images=?, status=?, stock=?, sort_order=?, meta=?, updated_at=? WHERE slug=?`,
       [
         input.title, input.title_zh ?? null, input.tagline ?? null, input.description ?? null, input.category,
+        input.collection ?? null,
         input.price_usd, input.compare_at_usd ?? null, JSON.stringify(input.images), input.status, input.stock,
         input.sort_order ?? 0, JSON.stringify(input.meta ?? {}), now(), slug,
       ]
     );
   } else {
     run(
-      `INSERT INTO products (slug, title, title_zh, tagline, description, category, price_usd, compare_at_usd,
+      `INSERT INTO products (slug, title, title_zh, tagline, description, category, collection, price_usd, compare_at_usd,
         images, status, stock, sort_order, meta, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         slug, input.title, input.title_zh ?? null, input.tagline ?? null, input.description ?? null, input.category,
+        input.collection ?? null,
         input.price_usd, input.compare_at_usd ?? null, JSON.stringify(input.images), input.status, input.stock,
         input.sort_order ?? 0, JSON.stringify(input.meta ?? {}), now(), now(),
       ]

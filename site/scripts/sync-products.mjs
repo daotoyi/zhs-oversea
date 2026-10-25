@@ -81,6 +81,17 @@ async function main() {
 
   const summary = [];
 
+  // 0) 幂等补列：本脚本直接操作 DB 文件、不经过应用层 migrate()，
+  //    所以「合集」列若尚未由应用迁移创建，这里先补上（与 db/index.ts 的 ensureColumn 同语义）
+  {
+    const cols = db.exec('PRAGMA table_info(products)');
+    const names = cols.length ? cols[0].values.map((v) => String(v[1])) : [];
+    if (!names.includes('collection')) {
+      run('ALTER TABLE products ADD COLUMN collection TEXT');
+      summary.push('新增列: products.collection');
+    }
+  }
+
   // 1) 归档所有不在新目录里的旧商品
   const existing = db.exec('SELECT slug FROM products');
   const allSlugs = existing.length ? existing[0].values.map((r) => r[0]) : [];
@@ -95,21 +106,21 @@ async function main() {
     const existingRow = getOne('SELECT slug, created_at FROM products WHERE slug = ?', [p.slug]);
     if (existingRow) {
       run(
-        `UPDATE products SET title=?, title_zh=?, tagline=?, description=?, category=?, price_usd=?,
+        `UPDATE products SET title=?, title_zh=?, tagline=?, description=?, category=?, collection=?, price_usd=?,
           compare_at_usd=?, images=?, status=?, stock=?, sort_order=?, meta=?, updated_at=? WHERE slug=?`,
         [
-          p.title, p.title_zh, p.tagline, p.description, p.category, p.price_usd,
+          p.title, p.title_zh, p.tagline, p.description, p.category, p.collection ?? null, p.price_usd,
           p.compare_at_usd, p.images, p.status, p.stock, p.sort_order, p.meta, now, p.slug,
         ]
       );
       summary.push(`更新已存在: ${p.slug} (${p.title_zh})`);
     } else {
       run(
-        `INSERT INTO products (slug, title, title_zh, tagline, description, category, price_usd,
+        `INSERT INTO products (slug, title, title_zh, tagline, description, category, collection, price_usd,
           compare_at_usd, images, status, stock, sort_order, meta, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          p.slug, p.title, p.title_zh, p.tagline, p.description, p.category, p.price_usd,
+          p.slug, p.title, p.title_zh, p.tagline, p.description, p.category, p.collection ?? null, p.price_usd,
           p.compare_at_usd, p.images, p.status, p.stock, p.sort_order, p.meta, now, now,
         ]
       );
