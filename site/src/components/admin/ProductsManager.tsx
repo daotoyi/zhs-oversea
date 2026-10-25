@@ -35,7 +35,7 @@ function usd(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-export default function ProductsManager({ initial }: { initial: Prod[] }) {
+export default function ProductsManager({ initial, lang = 'en' }: { initial: Prod[]; lang?: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [editing, setEditing] = useState<Prod | null>(null);
@@ -110,6 +110,17 @@ export default function ProductsManager({ initial }: { initial: Prod[] }) {
     startTransition(() => router.refresh());
   }
 
+  // 与全站语言（NEXT_LOCALE）同步：中文 locales 优先显示中文标题，缺中文回退英文
+  const showZh = lang === 'zh-Hans' || lang === 'zh-Hant';
+
+  function displayTitle(p: Prod): { main: string; sub: string } {
+    if (showZh) {
+      if (p.title_zh) return { main: p.title_zh, sub: p.title };
+      return { main: p.title, sub: p.slug };
+    }
+    return { main: p.title, sub: p.slug };
+  }
+
   const showForm = editing || creating;
 
   return (
@@ -127,7 +138,7 @@ export default function ProductsManager({ initial }: { initial: Prod[] }) {
             {initial.length === 0 && <tr><td colSpan={6}><div className="adm-empty">暂无商品</div></td></tr>}
             {initial.map((p) => (
               <tr key={p.slug}>
-                <td><div>{p.title}</div><div style={{ fontSize: 11, color: 'var(--ash)' }}>{p.slug}</div></td>
+                <td>{(() => { const t = displayTitle(p); return <><div>{t.main}</div><div style={{ fontSize: 11, color: 'var(--ash)' }}>{t.sub}</div></>; })()}</td>
                 <td>{CAT_LABELS[p.category] ?? p.category}</td>
                 <td className="num">{usd(p.price_usd)}</td>
                 <td className="num">{p.stock}</td>
