@@ -16,6 +16,8 @@ type CartState = {
   removeLine: (slug: string, variantId: string) => void;
   setQuantity: (slug: string, variantId: string, quantity: number) => void;
   clear: () => void;
+  /** 清理无效行（商品已下架/目录已更换导致的幽灵行）；keep 返回 false 的行被移除 */
+  sanitizeLines: (keep: (line: CartLine) => boolean) => void;
   openDrawer: () => void;
   closeDrawer: () => void;
 };
@@ -54,6 +56,12 @@ export const useCart = create<CartState>()(
                 ),
         })),
       clear: () => set({ lines: [] }),
+      sanitizeLines: (keep) =>
+        set((state) => {
+          const next = state.lines.filter(keep);
+          // 无无效行时返回原 state 对象，避免无谓重渲染与持久化写入
+          return next.length === state.lines.length ? state : { lines: next };
+        }),
       openDrawer: () => set({ drawerOpen: true }),
       closeDrawer: () => set({ drawerOpen: false }),
     }),

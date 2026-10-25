@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type CSSProperties } from 'react';
+import { useState, useEffect, type CSSProperties } from 'react';
 import { useCart } from '@/lib/cart';
 import { getProduct } from '@/lib/products';
 import { formatUsd } from '@/lib/shipping';
@@ -33,6 +33,7 @@ type S = {
   couponApplied: (amount: string) => string;
   couponInvalid: string;
   paymentMethod: string;
+  pruned: (count: number) => string;
 };
 
 const STRINGS: Record<Locale, S> = {
@@ -56,6 +57,8 @@ const STRINGS: Record<Locale, S> = {
     couponApplied: (a) => `Coupon applied — you save ${a}.`,
     couponInvalid: 'This code is invalid or not applicable.',
     paymentMethod: 'Payment method',
+    pruned: (n) =>
+      `Removed ${n} item${n === 1 ? '' : 's'} no longer available from your bag.`,
   },
   'zh-Hans': {
     empty: C.emptyBag,
@@ -77,15 +80,18 @@ const STRINGS: Record<Locale, S> = {
     couponApplied: (a: string) => `已应用优惠券，立减 ${a}。`,
     couponInvalid: '优惠码无效或不可用。',
     paymentMethod: '支付方式',
+    pruned: (n: number) => `已自动移除 ${n} 件失效商品（已下架或链接过期）。`,
   },
   'zh-Hant': {} as S,
 };
 STRINGS['zh-Hant'] = Object.fromEntries(
   Object.entries(STRINGS['zh-Hans']).map(([k, v]) => [
     k,
-    typeof v === 'function' ? (a: string) => toTraditional(v(a)) : toTraditional(v),
+    typeof v === 'function'
+      ? (...args: unknown[]) => toTraditional((v as (...a: unknown[]) => string)(...args))
+      : toTraditional(v as string),
   ])
-) as S;
+) as unknown as S;
 
 export function CartClient({
   locale,
@@ -106,7 +112,23 @@ export function CartClient({
   const [provider, setProvider] = useState<'stripe' | 'paypal'>('stripe');
   const [cardOpen, setCardOpen] = useState(false);
   const clear = useCart((st) => st.clear);
+  const sanitizeLines = useCart((st) => st.sanitizeLines);
+  const [prunedCount, setPrunedCount] = useState(0);
   const s = STRINGS[locale];
+
+  // 清理幽灵行：商品已下架/目录更换后，localStorage 里的旧行无法解析，
+  // 若不清理，角标数量会包含它们而本页过滤掉它们 —— 两边就对不上。
+  useEffect(() => {
+    if (lines.length === 0) return;
+    const stale = lines.filter((line) => {
+      const base = getProduct(line.slug);
+      if (!base) return true;
+      return !base.variants.some((v) => v.id === line.variantId);
+    });
+    if (stale.length === 0) return;
+    sanitizeLines((l) => !stale.some((x) => x.slug === l.slug && x.variantId === l.variantId));
+    setPrunedCount((n) => n + stale.length);
+  }, [lines, sanitizeLines]);
 
   const payBaseStyle: CSSProperties = {
     flex: 1,
@@ -214,6 +236,9 @@ export function CartClient({
   if (resolved.length === 0) {
     return (
       <div style={{ padding: '80px 0', textAlign: 'center' }}>
+        {prunedCount > 0 && (
+          <p style={{ fontSize: 13, color: 'var(--ash)', marginBottom: 14 }}>{s.pruned(prunedCount)}</p>
+        )}
         <p style={{ fontSize: 14, color: 'var(--ash)', marginBottom: 26 }}>{s.empty}</p>
         <Link className="btn btn-outline" href="/objects">
           {s.browse}
@@ -224,6 +249,11 @@ export function CartClient({
 
   return (
     <div className="cart-layout">
+      {prunedCount > 0 && (
+        <div className="cart-error" style={{ marginBottom: 14 }}>
+          {s.pruned(prunedCount)}
+        </div>
+      )}
       <div className="cart-lines">
         {resolved.map(({ line, product, variant }) => (
           <div key={`${line.slug}-${line.variantId}`} className="cart-line">

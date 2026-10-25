@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect } from 'react';
 import { useCart } from '@/lib/cart';
+import { getProduct } from '@/lib/products';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
 export type NavStrings = {
@@ -16,7 +18,23 @@ export type NavStrings = {
 
 export function Nav({ strings }: { strings: NavStrings }) {
   const lines = useCart((s) => s.lines);
-  const count = lines.reduce((sum, l) => sum + l.quantity, 0);
+  const sanitizeLines = useCart((s) => s.sanitizeLines);
+
+  // 一行可解析 = slug 仍在售目录且 variant 存在（DB 覆盖不改 variant id）。
+  // 目录更换后 localStorage 里的旧行会变成幽灵行：角标若数原始行，就会与购物车页对不上。
+  const isResolvable = (l: { slug: string; variantId: string }) => {
+    const p = getProduct(l.slug);
+    return !!p && p.variants.some((v) => v.id === l.variantId);
+  };
+  const count = lines.reduce((sum, l) => (isResolvable(l) ? sum + l.quantity : sum), 0);
+
+  // 全站自愈：任何页面挂载后都把幽灵行从购物车清掉，角标与购物车页随即一致
+  useEffect(() => {
+    if (lines.length === 0) return;
+    const stale = lines.filter((l) => !isResolvable(l));
+    if (stale.length === 0) return;
+    sanitizeLines((l) => !stale.some((s) => s.slug === l.slug && s.variantId === l.variantId));
+  }, [lines, sanitizeLines]);
 
   return (
     <>
