@@ -127,6 +127,21 @@ export default function PayPalSettings({ initial }: { initial: PayPalInitial }) 
       <p className="adm-steps-note">
         测试期建议 sandbox：能完整验证「结账 → 支付 → 落库 → 订单状态」。真实收款前，个人号小额测试通常没问题，正式上量建议注册个体工商户以合规。
       </p>
+
+      <hr className="rule" style={{ margin: '18px 0 14px' }} />
+
+      <p className="adm-oauth-hint" style={{ marginBottom: 8 }}>
+        <strong>Webhook（强烈建议，自动落库兜底）</strong>
+      </p>
+      <p className="adm-steps-note" style={{ marginBottom: 8 }}>
+        回跳页依赖买家浏览器跳回本站，断网 / 关窗会丢单。注册 PayPal Webhook 后由 PayPal 服务器主动通知我们落库，支付一旦完成订单必被创建，更可靠。
+      </p>
+      <ol className="adm-steps">
+        <li>PayPal Developer → 你的 App → <code>Webhooks</code> → <code>Add Webhook</code></li>
+        <li>URL 填：<code>https://zhenhesheng.com/api/webhooks/paypal</code></li>
+        <li>事件勾选 <code>PAYMENT.CAPTURE.COMPLETED</code>（及 <code>CHECKOUT.ORDER.COMPLETED</code>）</li>
+        <li>sandbox 与 live 各注册一次（模式切换后，对应环境的 webhook 才生效）</li>
+      </ol>
     </section>
   );
 }

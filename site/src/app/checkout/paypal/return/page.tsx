@@ -33,63 +33,19 @@ export default async function PayPalReturnPage({
 
   try {
     const { initDb } = await import('@/lib/db/loader');
-    const { findOrderByProviderRef, getPendingOrder, completePendingOrder } = await import('@/lib/admin/dao');
-    const { capturePayPalOrder, extractShippingAddress, extractPayer } = await import('@/lib/paypal');
-    const { persistOrder } = await import('@/lib/orders');
+    const { findOrderByProviderRef } = await import('@/lib/admin/dao');
+    const { finalizePayPalOrder } = await import('@/lib/paypal');
     await initDb();
 
-    // 幂等：已经落过库，直接展示
-    const existing = findOrderByProviderRef('paypal', token);
-    if (existing) {
-      return renderSuccess(existing.id, existing.total, existing.currency, existing.email, navStrings, footerStrings, t, h, Z);
-    }
+    // 统一落库（捕获 + 核实 COMPLETED + 取 pending 快照 persistOrder），幂等。
+    // 即使买家浏览器没跳回，此前 webhook 多半已落库，这里直接幂等返回。
+    await finalizePayPalOrder(token);
 
-    const pending = getPendingOrder(token);
-    if (!pending) {
-      return renderError('This PayPal order is unknown or expired.', '该 PayPal 订单不存在或已过期。', navStrings, footerStrings);
-    }
-
-    // 捕获资金并核实
-    const captured = await capturePayPalOrder(token);
-    const paid =
-      captured?.status === 'COMPLETED' ||
-      captured?.purchase_units?.[0]?.payments?.captures?.[0]?.status === 'COMPLETED';
-    if (!paid) {
+    const order = findOrderByProviderRef('paypal', token);
+    if (!order) {
       return renderError('Payment was not completed.', '支付未完成，请返回购物车重试。', navStrings, footerStrings);
     }
-
-    const address = extractShippingAddress(captured);
-    const payer = extractPayer(captured);
-    const { cart } = JSON.parse(pending.payload) as {
-      cart: import('@/lib/checkout/core').ResolvedCart;
-    };
-
-    const orderId = await persistOrder({
-      provider: 'paypal',
-      providerRef: token,
-      email: payer.email ?? '',
-      customerName: payer.name,
-      items: cart.lines.map((l) => ({
-        sku: l.sku,
-        slug: l.slug,
-        name: l.title,
-        quantity: l.quantity,
-        unitAmountUsd: l.unitAmountUsd,
-      })),
-      subtotal: cart.subtotalUsd,
-      discount: cart.discountUsd,
-      shipping: cart.shippingUsd,
-      tax: 0,
-      total: cart.totalUsd,
-      currency: cart.currency,
-      status: 'paid',
-      couponCode: cart.couponCode,
-      address,
-      memberId: cart.member?.id ?? null,
-    });
-    completePendingOrder(token, orderId);
-
-    return renderSuccess(orderId, cart.totalUsd, cart.currency, payer.email, navStrings, footerStrings, t, h, Z);
+    return renderSuccess(order.id, order.total, order.currency, order.email, navStrings, footerStrings, t, h, Z);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unexpected error';
     console.error('[paypal-return] failed:', message);

@@ -189,3 +189,64 @@ export function extractPayer(order: any): { email: string | null; name: string |
   const name = payer.name ? `${payer.name.given_name ?? ''} ${payer.name.surname ?? ''}`.trim() : null;
   return { email: payer.email_address ?? null, name: name || null };
 }
+
+/**
+ * 统一落库入口（return 页 + webhook 共用）
+ *
+ * 流程：幂等查已落库 → 取 pending 快照 → 捕获（已捕获则 409 回查）→ 核实 COMPLETED →
+ *       从快照取归一化 cart → persistOrder（JSON 冗余 + sql.js 镜像 + 券/会员）→ 标记 pending 完成。
+ *
+ * 安全边界：
+ *  - 只对「我们自己创建、且仍躺在 pending_orders 里」的订单落库；外部伪造的 order id 在 pending 里查不到，直接抛错。
+ *  - 金额/状态以「向 PayPal 重新拉取的订单」为准，绝不盲信 webhook/cookie 传来的金额。
+ *
+ * 幂等：同一 token 已落库直接返回，重复触发（return 页 + webhook 都到）不会重复建单。
+ */
+export async function finalizePayPalOrder(token: string): Promise<{ orderId: string; alreadyDone: boolean }> {
+  const { findOrderByProviderRef, getPendingOrder, completePendingOrder } = await import('@/lib/admin/dao');
+  const { persistOrder } = await import('@/lib/orders');
+
+  // 幂等：已经落过库，直接返回
+  const existing = findOrderByProviderRef('paypal', token);
+  if (existing) return { orderId: existing.id, alreadyDone: true };
+
+  const pending = getPendingOrder(token);
+  if (!pending) throw new Error('This PayPal order is unknown or expired.');
+
+  // 捕获资金（已捕获则 409 回查），并核实 COMPLETED
+  const captured = await capturePayPalOrder(token);
+  const paid =
+    captured?.status === 'COMPLETED' ||
+    captured?.purchase_units?.[0]?.payments?.captures?.[0]?.status === 'COMPLETED';
+  if (!paid) throw new Error('Payment was not completed.');
+
+  const address = extractShippingAddress(captured);
+  const payer = extractPayer(captured);
+  const { cart } = JSON.parse(pending.payload) as { cart: ResolvedCart };
+
+  const orderId = await persistOrder({
+    provider: 'paypal',
+    providerRef: token,
+    email: payer.email ?? '',
+    customerName: payer.name,
+    items: cart.lines.map((l) => ({
+      sku: l.sku,
+      slug: l.slug,
+      name: l.title,
+      quantity: l.quantity,
+      unitAmountUsd: l.unitAmountUsd,
+    })),
+    subtotal: cart.subtotalUsd,
+    discount: cart.discountUsd,
+    shipping: cart.shippingUsd,
+    tax: 0,
+    total: cart.totalUsd,
+    currency: cart.currency,
+    status: 'paid',
+    couponCode: cart.couponCode,
+    address,
+    memberId: cart.member?.id ?? null,
+  });
+  completePendingOrder(token, orderId);
+  return { orderId, alreadyDone: false };
+}
