@@ -3,7 +3,8 @@
 import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/admin/client';
-import { CATEGORY_KEYS, categoryLabel, categoryOptions } from '@/lib/categories';
+import { categoryLabel, categoryOptions } from '@/lib/categories';
+import { toTraditional } from '@/lib/i18n/convert';
 import type { Locale } from '@/lib/i18n/config';
 
 type Prod = {
@@ -114,7 +115,9 @@ export default function ProductsManager({ initial, lang = 'en' }: { initial: Pro
 
   function displayTitle(p: Prod): { main: string; sub: string } {
     if (showZh) {
-      if (p.title_zh) return { main: p.title_zh, sub: p.title };
+      // zh-Hant 下中文标题需转繁体（DB 存的是简体），否则与繁体品类名混排
+      const zh = p.title_zh ? (locale === 'zh-Hant' ? toTraditional(p.title_zh) : p.title_zh) : null;
+      if (zh) return { main: zh, sub: p.title };
       return { main: p.title, sub: p.slug };
     }
     return { main: p.title, sub: p.slug };
@@ -154,7 +157,9 @@ export default function ProductsManager({ initial, lang = 'en' }: { initial: Pro
             {initial.length === 0 && <tr><td colSpan={7}><div className="adm-empty">暂无商品</div></td></tr>}
             {initial.map((p) => (
               <tr key={p.slug}>
-                <td style={{ whiteSpace: 'nowrap' }}>{p.collection || '—'}</td>
+                <td style={{ whiteSpace: 'nowrap' }}>
+                  {p.collection ? (locale === 'zh-Hant' ? toTraditional(p.collection) : p.collection) : '—'}
+                </td>
                 <td>{(() => { const t = displayTitle(p); return <><div>{t.main}</div><div style={{ fontSize: 11, color: 'var(--ash)' }}>{t.sub}</div></>; })()}</td>
                 <td>{categoryLabel(p.category, locale)}</td>
                 <td className="num">{usd(p.price_usd)}</td>
