@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type CSSProperties } from 'react';
+import { useState, useRef, type CSSProperties } from 'react';
 import { formatUsd } from '@/lib/shipping';
 import type { Locale } from '@/lib/i18n/config';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
@@ -55,7 +55,7 @@ const STRINGS: Record<Locale, S> = {
     cvcPh: '123',
     email: 'Email for receipt',
     emailPh: 'you@example.com',
-    pay: (a) => `Pay ${a}`,
+    pay: (a) => `Confirm payment ${a}`,
     processing: 'Processing…',
     secureNote: 'Your card details are encrypted in transit.',
     stripeNote: 'Stripe is not connected yet — this is the card-entry screen (demo).',
@@ -86,7 +86,7 @@ const STRINGS: Record<Locale, S> = {
     cvcPh: '123',
     email: '接收凭证邮箱',
     emailPh: 'you@example.com',
-    pay: (a: string) => `支付 ${a}`,
+    pay: (a: string) => `确认支付 ${a}`,
     processing: '处理中…',
     secureNote: '您的卡信息在传输过程中已加密。',
     stripeNote: 'Stripe 尚未接入 —— 此处为信用卡录入界面（演示）。',
@@ -212,9 +212,12 @@ export function CardCheckoutModal({
   const [expiry, setExpiry] = useState('');
   const [cvc, setCvc] = useState('');
   const [email, setEmail] = useState('');
+  // 错误提示只在用户点击「确认支付」后出现（touched 仅由 submit 设置），
+  // 避免浏览器自动补全中途触发 blur 时满屏报错、看似“自动校验支付”。
   const [touched, setTouched] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [done, setDone] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const totalCents = Math.max(0, subtotalCents - discountCents) + shippingCents;
   const digits = card.replace(/\D/g, '');
@@ -225,10 +228,31 @@ export function CardCheckoutModal({
     name.trim().length > 0 &&
     emailValid(email);
 
+  // 第一个未通过校验的字段（autocomplete 名），用于失败时聚焦
+  const firstInvalid = !luhnValid(digits)
+    ? 'cc-number'
+    : name.trim().length === 0
+      ? 'cc-name'
+      : !expiryValid(expiry)
+        ? 'cc-exp'
+        : !/^\d{3,4}$/.test(cvc)
+          ? 'cc-csc'
+          : !emailValid(email)
+            ? 'email'
+            : null;
+
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    // 支付只由这个按钮（或回车）手动发起；自动补全不会触发
     setTouched(true);
-    if (!valid || processing) return;
+    if (!valid || processing) {
+      if (firstInvalid) {
+        formRef.current
+          ?.querySelector<HTMLInputElement>(`input[autocomplete="${firstInvalid}"]`)
+          ?.focus();
+      }
+      return;
+    }
     setProcessing(true);
     // 演示：Stripe 未接入，仅模拟处理流程
     setTimeout(() => {
@@ -291,7 +315,7 @@ export function CardCheckoutModal({
             </button>
           </div>
         ) : (
-          <form onSubmit={submit} noValidate>
+          <form ref={formRef} onSubmit={submit} noValidate>
             <label style={label}>{s.cardNumber}</label>
             <input
               inputMode="numeric"
@@ -299,7 +323,6 @@ export function CardCheckoutModal({
               placeholder={s.cardNumberPh}
               value={card}
               onChange={(e) => setCard(formatCardNumber(e.target.value))}
-              onBlur={() => setTouched(true)}
               style={field}
             />
             {(touched && !luhnValid(digits)) && <div style={errStyle}>{s.errCard}</div>}
@@ -310,7 +333,6 @@ export function CardCheckoutModal({
               placeholder={s.namePh}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              onBlur={() => setTouched(true)}
               style={field}
             />
             {(touched && name.trim().length === 0) && <div style={errStyle}>{s.errName}</div>}
@@ -324,7 +346,6 @@ export function CardCheckoutModal({
                   placeholder={s.expiryPh}
                   value={expiry}
                   onChange={(e) => setExpiry(formatExpiry(e.target.value))}
-                  onBlur={() => setTouched(true)}
                   style={field}
                 />
                 {(touched && !expiryValid(expiry)) && <div style={errStyle}>{s.errExpiry}</div>}
@@ -337,7 +358,6 @@ export function CardCheckoutModal({
                   placeholder={s.cvcPh}
                   value={cvc}
                   onChange={(e) => setCvc(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                  onBlur={() => setTouched(true)}
                   style={field}
                 />
                 {(touched && !/^\d{3,4}$/.test(cvc)) && <div style={errStyle}>{s.errCvc}</div>}
@@ -351,7 +371,6 @@ export function CardCheckoutModal({
               placeholder={s.emailPh}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              onBlur={() => setTouched(true)}
               style={field}
             />
             {(touched && !emailValid(email)) && <div style={errStyle}>{s.errEmail}</div>}
