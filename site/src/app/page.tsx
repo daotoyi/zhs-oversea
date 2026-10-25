@@ -39,8 +39,13 @@ export default async function HomePage() {
   const favSlugs = await viewerFavoriteSlugs();
   const h = UI_ZH.home;
 
+  // 品类标签按语种：英文用英名；zh-Hant 转繁体；zh-Hans 保持简体（与全站 t()/zh() 约定一致）
   const catLabel = (cat: string) =>
-    locale === 'en' ? CATEGORY_EN[cat] : toTraditional(CATEGORY_ZH[cat]);
+    locale === 'en'
+      ? CATEGORY_EN[cat]
+      : locale === 'zh-Hant'
+        ? toTraditional(CATEGORY_ZH[cat])
+        : CATEGORY_ZH[cat];
 
   const hexRows: [string, string, string][] = [
     ['☰', 'The Creative', '乾'],
@@ -48,17 +53,23 @@ export default async function HomePage() {
     ['☵', 'The Abysmal', '坎'],
     ['☲', 'The Clinging', '離'],
     ['☴', 'The Gentle', '巽'],
-    ['☶', 'The Reedy', '艮'],
+    ['☶', 'Keeping Still', '艮'],
   ];
   const hexRowsZh: [string, string, string][] = [
     ['☰', '乾 · 健', '乾'],
     ['☷', '坤 · 顺', '坤'],
     ['☵', '坎 · 陷', '坎'],
-    ['☲', '離 · 麗', '離'],
+    ['☲', '离 · 丽', '离'],
     ['☴', '巽 · 逊', '巽'],
     ['☶', '艮 · 止', '艮'],
   ];
-  const rows = locale === 'en' ? hexRows : hexRowsZh;
+  // 中文卦名按语种：zh-Hant 转繁体，zh-Hans 保持简体（与全站约定一致）
+  const rows: [string, string, string][] =
+    locale === 'en'
+      ? hexRows
+      : locale === 'zh-Hant'
+        ? hexRowsZh.map((r) => [r[0], toTraditional(r[1]), toTraditional(r[2])])
+        : hexRowsZh;
 
   const trust =
     locale === 'en'

@@ -75,9 +75,16 @@ export default async function ObjectsPage({
 
   const all = await Promise.all((await getStoreProducts()).map(localizeProduct));
   const products = category && category !== 'all' ? all.filter((p) => p.category === category) : all;
-  const filters = locale === 'en' ? FILTERS_EN : FILTERS_ZH.map((f) => ({ ...f, label: toTraditional(f.label) }));
+  // 品类标签按语种：英文用英名；zh-Hant 转繁体；zh-Hans 保持简体（与全站 t()/zh() 约定一致）
+  const filters = locale === 'en'
+    ? FILTERS_EN
+    : FILTERS_ZH.map((f) => ({ ...f, label: locale === 'zh-Hant' ? toTraditional(f.label) : f.label }));
   const catLabel = (cat: string) =>
-    locale === 'en' ? CATEGORY_EN[cat] : toTraditional(CATEGORY_ZH[cat]);
+    locale === 'en'
+      ? CATEGORY_EN[cat]
+      : locale === 'zh-Hant'
+        ? toTraditional(CATEGORY_ZH[cat])
+        : CATEGORY_ZH[cat];
   const h = UI_ZH.objectsPage;
 
   return (
