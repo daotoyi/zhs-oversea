@@ -208,6 +208,7 @@ CREATE TABLE IF NOT EXISTS oauth_states (
   state TEXT PRIMARY KEY,
   provider TEXT NOT NULL,
   redirect_to TEXT,
+  nonce TEXT,
   created_at INTEGER NOT NULL,
   expires_at INTEGER NOT NULL
 );

@@ -21,6 +21,6 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ provider: s
   }
 
   const next = safeNext(new URL(req.url).searchParams.get('next'));
-  const state = await createState(provider as ProviderKey, next);
-  return NextResponse.redirect(authorizeUrl(provider as ProviderKey, state, base));
+  const { state, nonce } = await createState(provider as ProviderKey, next);
+  return NextResponse.redirect(authorizeUrl(provider as ProviderKey, state, nonce, base));
 }

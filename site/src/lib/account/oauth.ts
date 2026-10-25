@@ -14,8 +14,9 @@
  */
 
 import crypto from 'node:crypto';
-import { SignJWT, importPKCS8 } from 'jose';
+import { SignJWT, importPKCS8, jwtVerify, createLocalJWKSet } from 'jose';
 import { resolve } from '@/lib/settings';
+import { GOOGLE_JWKS } from './google-jwks';
 
 export type ProviderKey = 'google' | 'apple';
 
@@ -95,21 +96,26 @@ export function redirectUri(base: string, key: ProviderKey): string {
   return `${base}/api/auth/oauth/${key}/callback`;
 }
 
-export function authorizeUrl(key: ProviderKey, state: string, base: string): string {
+/** Google 走前端页面中继（国内服务器无法直连 Google，故用隐式 id_token 流 + 本地验签） */
+export function frontendRedirectUri(base: string, key: ProviderKey): string {
+  return `${base}/account/oauth/${key}/callback`;
+}
+
+export function authorizeUrl(key: ProviderKey, state: string, nonce: string, base: string): string {
   const creds = credentials(key);
-  const uri = redirectUri(base, key);
   if (key === 'google') {
     const p = new URLSearchParams({
       client_id: creds.clientId!,
-      redirect_uri: uri,
-      response_type: 'code',
+      redirect_uri: frontendRedirectUri(base, key),
+      response_type: 'id_token',
       scope: 'openid email profile',
       state,
-      access_type: 'online',
+      nonce,
       prompt: 'select_account',
     });
     return `https://accounts.google.com/o/oauth2/v2/auth?${p.toString()}`;
   }
+  const uri = redirectUri(base, key);
   const p = new URLSearchParams({
     client_id: creds.clientId!,
     redirect_uri: uri,
@@ -258,30 +264,64 @@ export async function exchangeCode(key: ProviderKey, code: string, base: string)
 
 /* ── state 防 CSRF（落库，多实例也安全）── */
 
-export async function createState(provider: ProviderKey, redirectTo: string | null): Promise<string> {
+export async function createState(
+  provider: ProviderKey,
+  redirectTo: string | null
+): Promise<{ state: string; nonce: string }> {
   const { run, now } = await import('@/lib/db/loader');
   const state = crypto.randomBytes(24).toString('base64url');
-  run('INSERT INTO oauth_states (state, provider, redirect_to, created_at, expires_at) VALUES (?, ?, ?, ?, ?)', [
-    state,
-    provider,
-    redirectTo,
-    now(),
-    now() + 10 * 60 * 1000,
-  ]);
-  return state;
+  const nonce = crypto.randomBytes(24).toString('base64url');
+  run(
+    'INSERT INTO oauth_states (state, provider, redirect_to, nonce, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)',
+    [state, provider, redirectTo, nonce, now(), now() + 10 * 60 * 1000]
+  );
+  return { state, nonce };
 }
 
 export async function consumeState(
   state: string,
   provider: ProviderKey
-): Promise<{ ok: boolean; redirectTo: string | null }> {
+): Promise<{ ok: boolean; redirectTo: string | null; nonce: string | null }> {
   const { get, run, now } = await import('@/lib/db/loader');
-  const row = get<{ provider: string; redirect_to: string | null; expires_at: number }>(
-    'SELECT provider, redirect_to, expires_at FROM oauth_states WHERE state = ?',
+  const row = get<{ provider: string; redirect_to: string | null; nonce: string | null; expires_at: number }>(
+    'SELECT provider, redirect_to, nonce, expires_at FROM oauth_states WHERE state = ?',
     [state]
   );
-  if (!row) return { ok: false, redirectTo: null };
+  if (!row) return { ok: false, redirectTo: null, nonce: null };
   run('DELETE FROM oauth_states WHERE state = ?', [state]);
-  if (row.provider !== provider || row.expires_at < now()) return { ok: false, redirectTo: null };
-  return { ok: true, redirectTo: row.redirect_to };
+  if (row.provider !== provider || row.expires_at < now())
+    return { ok: false, redirectTo: null, nonce: null };
+  return { ok: true, redirectTo: row.redirect_to, nonce: row.nonce };
+}
+
+const GOOGLE_JWK_SET = createLocalJWKSet(GOOGLE_JWKS);
+
+/**
+ * 验证 Google 返回的 id_token（由前端中继带过来），用本地可信 JWKS 验签。
+ * 不再由服务器访问 Google，规避国内服务器被墙导致的 token 交换超时 500。
+ * 校验：签发者、受众（本站 client_id）、过期时间、以及防重放 nonce。
+ */
+export async function verifyGoogleIdToken(
+  idToken: string,
+  expectedNonce: string | null
+): Promise<OAuthProfile | null> {
+  try {
+    const { payload } = await jwtVerify(idToken, GOOGLE_JWK_SET, {
+      issuer: ['https://accounts.google.com', 'accounts.google.com'],
+      audience: credentials('google').clientId ?? undefined,
+    });
+    if (!payload.sub) return null;
+    if (expectedNonce && payload.nonce !== expectedNonce) return null;
+    if (payload.exp && payload.exp * 1000 < Date.now()) return null;
+    return {
+      providerUid: String(payload.sub),
+      email: typeof payload.email === 'string' ? payload.email : null,
+      name: typeof payload.name === 'string' ? payload.name : null,
+      avatarUrl: typeof payload.picture === 'string' ? payload.picture : null,
+      emailVerified: payload.email_verified === true || payload.email_verified === 'true',
+    };
+  } catch (err) {
+    console.error('[oauth] google id_token verify failed:', err instanceof Error ? err.message : err);
+    return null;
+  }
 }
