@@ -2910,6 +2910,55 @@ html[lang^='zh'] .eyebrow {
   color: var(--ash);
 }
 
+/* 统计卡可点击（点「我的收藏」跳到下方收藏区）*/
+.acct-stat-link {
+  position: relative;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.acct-stat-link:hover {
+  background: #f1ede2;
+}
+
+.acct-stat-link:hover .acct-stat-num,
+.acct-stat-link:hover .acct-stat-lab {
+  color: var(--cinnabar);
+}
+
+.acct-stat-link:focus-visible {
+  outline: 2px solid var(--cinnabar);
+  outline-offset: -2px;
+}
+
+.acct-stat-go {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--ash);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.acct-stat-link:hover .acct-stat-go {
+  opacity: 1;
+}
+
+/* 锚点跳转：平滑滚动 + 避开 sticky 导航（导航高 72px，留 16px 余量）*/
+#acct-favorites {
+  scroll-margin-top: 88px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 .acct-grid {
   display: grid;
   grid-template-columns: 1.45fr 1fr;

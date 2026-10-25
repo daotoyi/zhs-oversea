@@ -125,10 +125,11 @@ export default async function AccountPage() {
               <span className="acct-stat-num">{stats.count}</span>
               <span className="acct-stat-lab">{labels.ordersTitle}</span>
             </div>
-            <div className="acct-stat">
+            <a className="acct-stat acct-stat-link" href="#acct-favorites">
               <span className="acct-stat-num">{favCount}</span>
               <span className="acct-stat-lab">{labels.favoritesTitle}</span>
-            </div>
+              <span className="acct-stat-go" aria-hidden="true">↓</span>
+            </a>
           </div>
 
           <div className="acct-grid">
@@ -204,7 +205,7 @@ export default async function AccountPage() {
                 )}
               </section>
 
-              <section className="acct-card">
+              <section className="acct-card" id="acct-favorites">
                 <header className="acct-card-head">
                   <h2 className="serif">{labels.favoritesTitle}</h2>
                 </header>
