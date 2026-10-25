@@ -3340,6 +3340,71 @@ html[lang^='zh'] .eyebrow {
   border-left: 2px solid #c99a4e;
 }
 
+/* PayPal 后台配置防漏增强 */
+.paypal-mode-badge {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  padding: 9px 12px;
+  border-radius: 5px;
+  margin-bottom: 14px;
+  border: 1px solid var(--rule);
+  background: #f4f7fb;
+  color: var(--ink);
+}
+
+.paypal-mode-badge .paypal-mode-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #5b7da6;
+  flex: 0 0 auto;
+}
+
+.paypal-mode-badge[data-mode='live'] {
+  background: #fdeeee;
+  border-color: #e3b7b7;
+  color: #8c2f22;
+}
+
+.paypal-mode-badge[data-mode='live'] .paypal-mode-dot {
+  background: #c0392b;
+}
+
+.paypal-mode-badge strong {
+  font-weight: 600;
+}
+
+.paypal-mode-src {
+  font-size: 11px;
+  color: var(--ash);
+}
+
+.paypal-live-warn {
+  font-size: 12px;
+  line-height: 1.7;
+  padding: 11px 13px;
+  margin-bottom: 14px;
+  background: #fdeeee;
+  border: 1px solid #e3b7b7;
+  border-radius: 5px;
+  color: #8c2f22;
+}
+
+.paypal-trap {
+  display: block;
+  margin-top: 6px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: #8c2f22;
+  background: #fdeeee;
+  border-left: 2px solid #c0392b;
+  padding: 7px 10px;
+}
+
 @media (max-width: 980px) {
   .adm-oauth-grid {
     grid-template-columns: 1fr;
