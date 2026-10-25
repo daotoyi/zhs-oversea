@@ -114,12 +114,23 @@ export async function localizeChapter(chapter: Chapter, n: number): Promise<Chap
 
 export async function localizeHexagram(hex: Hexagram, slug: string): Promise<Hexagram> {
   const locale = await getLocale();
-  const z = HEXAGRAMS_ZH[slug];
-  if (!z) return hex;
-  return {
+  // 古典原文（卦辞/大象传/爻辞/小象）按简体录入，zh-Hant 渲染时转繁体；英译原样
+  const base: Hexagram = {
     ...hex,
-    en: (zh(z.en, locale) as string) ?? hex.en,
-    reading: (zh(z.reading, locale) as string) ?? hex.reading,
+    judgement: zh(hex.judgement, locale) ?? hex.judgement,
+    imageText: zh(hex.imageText, locale) ?? hex.imageText,
+    lines: hex.lines.map((l) => ({
+      ...l,
+      text: zh(l.text, locale) ?? l.text,
+      image: zh(l.image, locale) ?? l.image,
+    })),
+  };
+  const z = HEXAGRAMS_ZH[slug];
+  if (!z) return base;
+  return {
+    ...base,
+    en: (zh(z.en, locale) as string) ?? base.en,
+    reading: (zh(z.reading, locale) as string) ?? base.reading,
   };
 }
 

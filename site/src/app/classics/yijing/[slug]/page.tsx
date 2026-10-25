@@ -59,8 +59,39 @@ export default async function HexagramPage({ params }: { params: Promise<{ slug:
           <div className="cjk" style={{ fontSize: 16, color: 'var(--ash)', letterSpacing: '0.16em', marginBottom: 8 }}>
             {base.zh}
           </div>
-          <div className="eyebrow" style={{ marginBottom: 40 }}>{base.image}</div>
-          <p style={{ fontSize: 15.5, lineHeight: 1.85, color: '#3A352E' }}>{h.reading}</p>
+          <div className="eyebrow">{base.image}</div>
+
+          <section className="hex-sec">
+            <h2 className="hex-sec-label">{t('Judgement', '卦辞')}</h2>
+            <p className="hex-classical cjk">{h.judgement}</p>
+            <p className="hex-en">{h.judgementEn}</p>
+          </section>
+
+          <section className="hex-sec">
+            <h2 className="hex-sec-label">{t('The Image', '象传')}</h2>
+            <p className="hex-classical cjk">{h.imageText}</p>
+            <p className="hex-en">{h.imageTextEn}</p>
+          </section>
+
+          <section className="hex-sec">
+            <h2 className="hex-sec-label">{t('The Lines', '爻辞')}</h2>
+            {h.lines.map((l, i) => (
+              <div className="hex-line" key={`${l.name}-${i}`}>
+                <div className="hex-line-pos cjk">{l.name}</div>
+                <div className="hex-line-body">
+                  <p className="hex-classical cjk">{l.text}</p>
+                  <p className="hex-en">{l.textEn}</p>
+                  {l.image && <p className="hex-line-img cjk">{l.image}</p>}
+                  {l.imageEn && <p className="hex-en hex-line-img-en">{l.imageEn}</p>}
+                </div>
+              </div>
+            ))}
+          </section>
+
+          <section className="hex-sec">
+            <h2 className="hex-sec-label">{t('Reading', '读法')}</h2>
+            <p style={{ fontSize: 15.5, lineHeight: 1.85, color: '#3A352E' }}>{h.reading}</p>
+          </section>
         </div>
       </article>
       <Footer strings={footerStrings} />

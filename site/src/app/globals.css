@@ -1752,6 +1752,71 @@ button {
   color: var(--ash);
 }
 
+/* ── 卦章（详情页）：卦辞 / 象传 / 爻辞 / 读法 ── */
+.hex-sec {
+  margin-top: 42px;
+  padding-top: 26px;
+  border-top: 1px solid var(--rule);
+}
+
+.hex-sec-label {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  color: var(--ash);
+  margin-bottom: 16px;
+}
+
+.hex-classical {
+  font-size: 16.5px;
+  line-height: 1.95;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.hex-en {
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--ash);
+  margin-bottom: 4px;
+}
+
+.hex-line {
+  display: flex;
+  gap: 18px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.hex-line:last-child {
+  border-bottom: none;
+}
+
+.hex-line-pos {
+  flex: 0 0 46px;
+  font-size: 14px;
+  color: var(--cinnabar);
+  padding-top: 3px;
+  letter-spacing: 0.08em;
+}
+
+.hex-line-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.hex-line-img {
+  font-size: 13.5px;
+  line-height: 1.8;
+  color: var(--ash);
+  margin-top: 8px;
+}
+
+.hex-line-img-en {
+  font-size: 12.5px;
+  margin-top: 2px;
+}
+
 /* ── Journal ── */
 .journal-grid {
   display: grid;
