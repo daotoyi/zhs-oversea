@@ -92,6 +92,8 @@ export async function initDb(): Promise<Database> {
 function migrate(database: Database): void {
   ensureColumn(database, 'orders', 'user_id', 'TEXT');
   ensureColumn(database, 'oauth_states', 'nonce', 'TEXT');
+  ensureColumn(database, 'orders', 'payment_provider', "TEXT DEFAULT 'stripe'");
+  ensureColumn(database, 'orders', 'provider_ref', 'TEXT');
 }
 
 function ensureColumn(database: Database, table: string, column: string, ddl: string): void {

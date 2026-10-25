@@ -65,6 +65,8 @@ CREATE TABLE IF NOT EXISTS orders (
   coupon_code TEXT,
   tracking_no TEXT,
   address TEXT,
+  payment_provider TEXT DEFAULT 'stripe',
+  provider_ref TEXT,
   created_at INTEGER NOT NULL
 );
 
@@ -236,6 +238,20 @@ CREATE TABLE IF NOT EXISTS mail_unsubscribe_tokens (
   email TEXT PRIMARY KEY,
   token TEXT UNIQUE NOT NULL,
   created_at INTEGER NOT NULL
+);
+
+/* ── 待支付订单快照 ──
+   多渠道统一落库的关键：建支付时先写快照（金额/折扣/券/会员），
+   支付网关回传"成功"后按 provider_ref 取回快照、提升为正式订单，
+   避免折扣/会员归属在跨渠道时丢失。 */
+CREATE TABLE IF NOT EXISTS pending_orders (
+  provider_ref TEXT PRIMARY KEY,
+  provider TEXT NOT NULL,
+  payload TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at INTEGER NOT NULL,
+  completed_at INTEGER,
+  order_id TEXT
 );
 `;
 

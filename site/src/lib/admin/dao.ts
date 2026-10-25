@@ -299,18 +299,20 @@ export type Order = {
   coupon_code: string | null;
   tracking_no: string | null;
   address: string | null;
+  payment_provider: string;
+  provider_ref: string | null;
   created_at: number;
 };
 
 export function createOrder(input: Omit<Order, 'created_at'>): Order {
   run(
     `INSERT INTO orders (id, stripe_session_id, email, customer_name, items, subtotal, discount, shipping,
-      tax, total, currency, status, coupon_code, tracking_no, address, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      tax, total, currency, status, coupon_code, tracking_no, address, payment_provider, provider_ref, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       input.id, input.stripe_session_id, input.email, input.customer_name, input.items, input.subtotal,
       input.discount, input.shipping, input.tax, input.total, input.currency, input.status, input.coupon_code,
-      input.tracking_no, input.address, now(),
+      input.tracking_no, input.address, input.payment_provider ?? 'stripe', input.provider_ref ?? null, now(),
     ]
   );
   return get<Order>('SELECT * FROM orders WHERE id = ?', [input.id])!;
@@ -318,6 +320,40 @@ export function createOrder(input: Omit<Order, 'created_at'>): Order {
 
 export function findOrderBySession(sessionId: string): Order | null {
   return get<Order>('SELECT * FROM orders WHERE stripe_session_id = ?', [sessionId]);
+}
+
+export function findOrderByProviderRef(provider: string, ref: string): Order | null {
+  return get<Order>('SELECT * FROM orders WHERE payment_provider = ? AND provider_ref = ?', [provider, ref]);
+}
+
+/* ── 待支付订单快照（多渠道统一落库） ── */
+export type PendingOrder = {
+  provider_ref: string;
+  provider: string;
+  payload: string;
+  status: string;
+  created_at: number;
+  completed_at: number | null;
+  order_id: string | null;
+};
+
+export function addPendingOrder(p: { providerRef: string; provider: string; payload: string }): void {
+  run(
+    `INSERT OR REPLACE INTO pending_orders (provider_ref, provider, payload, status, created_at)
+     VALUES (?, ?, ?, 'pending', ?)`,
+    [p.providerRef, p.provider, p.payload, Date.now()]
+  );
+}
+
+export function getPendingOrder(providerRef: string): PendingOrder | null {
+  return get<PendingOrder>('SELECT * FROM pending_orders WHERE provider_ref = ?', [providerRef]);
+}
+
+export function completePendingOrder(providerRef: string, orderId: string): void {
+  run(
+    `UPDATE pending_orders SET status = 'completed', completed_at = ?, order_id = ? WHERE provider_ref = ?`,
+    [Date.now(), orderId, providerRef]
+  );
 }
 
 export function listOrders(opts: { status?: string; q?: string; limit?: number } = {}): Order[] {

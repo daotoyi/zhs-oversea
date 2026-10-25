@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { useCart } from '@/lib/cart';
 import { getProduct } from '@/lib/products';
 import { formatUsd } from '@/lib/shipping';
@@ -31,6 +31,7 @@ type S = {
   couponPlaceholder: string;
   couponApplied: (amount: string) => string;
   couponInvalid: string;
+  paymentMethod: string;
 };
 
 const STRINGS: Record<Locale, S> = {
@@ -53,6 +54,7 @@ const STRINGS: Record<Locale, S> = {
     couponPlaceholder: 'Enter coupon code',
     couponApplied: (a) => `Coupon applied — you save ${a}.`,
     couponInvalid: 'This code is invalid or not applicable.',
+    paymentMethod: 'Payment method',
   },
   'zh-Hans': {
     empty: C.emptyBag,
@@ -73,6 +75,7 @@ const STRINGS: Record<Locale, S> = {
     couponPlaceholder: '输入优惠码',
     couponApplied: (a: string) => `已应用优惠券，立减 ${a}。`,
     couponInvalid: '优惠码无效或不可用。',
+    paymentMethod: '支付方式',
   },
   'zh-Hant': {} as S,
 };
@@ -99,7 +102,25 @@ export function CartClient({
   const [couponMsg, setCouponMsg] = useState<string | null>(null);
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponAppliedCode, setCouponAppliedCode] = useState<string | null>(null);
+  const [provider, setProvider] = useState<'stripe' | 'paypal'>('stripe');
   const s = STRINGS[locale];
+
+  const payBaseStyle: CSSProperties = {
+    flex: 1,
+    padding: '10px 12px',
+    borderRadius: 8,
+    border: '1px solid var(--line)',
+    background: 'transparent',
+    color: 'var(--ink)',
+    fontSize: 14,
+    cursor: 'pointer',
+  };
+  const payActiveStyle: CSSProperties = {
+    ...payBaseStyle,
+    borderColor: 'var(--ink)',
+    background: 'var(--ink)',
+    color: 'var(--paper)',
+  };
 
   const resolved = lines
     .map((line) => {
@@ -161,7 +182,8 @@ export function CartClient({
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch('/api/checkout/session', {
+      const endpoint = provider === 'paypal' ? '/api/checkout/paypal' : '/api/checkout/session';
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -170,10 +192,11 @@ export function CartClient({
         }),
       });
       const data = await res.json();
-      if (!res.ok || !data.url) {
+      const redirectUrl = data.approveUrl ?? data.url;
+      if (!res.ok || !redirectUrl) {
         throw new Error(data.error ?? 'Checkout could not be started');
       }
-      window.location.href = data.url;
+      window.location.href = redirectUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
       setBusy(false);
@@ -270,6 +293,18 @@ export function CartClient({
         )}
 
         {error && <div className="cart-error">{error}</div>}
+
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 13, color: 'var(--ash)', marginBottom: 8 }}>{s.paymentMethod}</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" onClick={() => setProvider('stripe')} style={provider === 'stripe' ? payActiveStyle : payBaseStyle}>
+              信用卡 / Stripe
+            </button>
+            <button type="button" onClick={() => setProvider('paypal')} style={provider === 'paypal' ? payActiveStyle : payBaseStyle}>
+              PayPal
+            </button>
+          </div>
+        </div>
 
         <button className="btn btn-solid" style={{ width: '100%' }} onClick={checkout} disabled={busy}>
           {busy ? s.opening : s.checkout}
