@@ -30,12 +30,11 @@ const SELECT =
   'slug, title, title_zh, tagline, description, category, price_usd, compare_at_usd, images, status, stock';
 
 const VALID_CATEGORIES: ProductCategory[] = [
-  'tea-ware',
-  'incense-ritual',
+  'fortune-charms',
+  'heavenly-stems',
+  'three-harmonies',
+  'raw-wood',
   'writing-desk',
-  'talisman-objects',
-  'home-altar',
-  'apparel',
   'books',
 ];
 

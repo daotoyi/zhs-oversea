@@ -8,13 +8,13 @@
  * 4. shipping 从北京发出，freightThresholdUsd 控制免运门槛
  */
 
+// 商品品类与 shop 网址（zhenhesheng.cn 真实商品库）保持一致
 export type ProductCategory =
-  | 'tea-ware'
-  | 'incense-ritual'
+  | 'fortune-charms'
+  | 'heavenly-stems'
+  | 'three-harmonies'
+  | 'raw-wood'
   | 'writing-desk'
-  | 'talisman-objects'
-  | 'home-altar'
-  | 'apparel'
   | 'books';
 
 export type CitesStatus = 'not-regulated' | 'regulated';

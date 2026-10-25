@@ -8,17 +8,16 @@ import { LineChart, DonutChart } from '@/components/admin/Charts';
 export const dynamic = 'force-dynamic';
 
 const CAT_COLORS: Record<string, string> = {
+  'fortune-charms': '#9E3B2E',
+  'heavenly-stems': '#C8A15A',
+  'three-harmonies': '#4F7A6A',
+  'raw-wood': '#6B645B',
+  'writing-desk': '#3F6F8F',
   books: '#5C6B58',
-  'writing-desk': '#9E3B2E',
-  'incense-ritual': '#C8A15A',
-  'talisman-objects': '#8A6F9E',
-  'tea-ware': '#4F7A6A',
-  'home-altar': '#6B645B',
-  apparel: '#3F6F8F',
 };
 const CAT_LABELS: Record<string, string> = {
-  books: '书籍', 'writing-desk': '文房', 'incense-ritual': '香道',
-  'talisman-objects': '开运饰品', 'tea-ware': '茶器', 'home-altar': '风水摆件', apparel: '服饰',
+  'fortune-charms': '开运饰品', 'heavenly-stems': '天干十义', 'three-harmonies': '三合文创',
+  'raw-wood': '原木文创', 'writing-desk': '文房雅器', books: '典籍',
 };
 
 function usd(cents: number) {

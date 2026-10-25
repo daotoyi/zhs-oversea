@@ -16,8 +16,10 @@ export function Footer({ strings }: { strings: {
   fourPillars: string;
   sessions: string;
   journal: string;
-  tea: string;
-  incense: string;
+  fortune: string;
+  stems: string;
+  harmonies: string;
+  rawWood: string;
   writing: string;
   books: string;
   allObjects: string;
@@ -40,8 +42,10 @@ export function Footer({ strings }: { strings: {
           <div className="foot-col">
             <h5>{strings.shopH}</h5>
             <Link href="/objects">{strings.allObjects}</Link>
-            <Link href="/objects?category=tea-ware">{strings.tea}</Link>
-            <Link href="/objects?category=incense-ritual">{strings.incense}</Link>
+            <Link href="/objects?category=fortune-charms">{strings.fortune}</Link>
+            <Link href="/objects?category=heavenly-stems">{strings.stems}</Link>
+            <Link href="/objects?category=three-harmonies">{strings.harmonies}</Link>
+            <Link href="/objects?category=raw-wood">{strings.rawWood}</Link>
             <Link href="/objects?category=writing-desk">{strings.writing}</Link>
             <Link href="/objects?category=books">{strings.books}</Link>
           </div>

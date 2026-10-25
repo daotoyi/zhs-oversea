@@ -12,22 +12,20 @@ import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
 
 const CATEGORY_EN: Record<string, string> = {
-  'tea-ware': 'Tea ware',
-  'incense-ritual': 'Incense & ritual',
+  'fortune-charms': 'Fortune charms',
+  'heavenly-stems': 'Heavenly stems',
+  'three-harmonies': 'Three harmonies',
+  'raw-wood': 'Raw wood',
   'writing-desk': 'Writing & desk',
-  'talisman-objects': 'Talisman objects',
-  'home-altar': 'Home & altar',
-  apparel: 'Apparel',
   books: 'Books',
 };
 
 const CATEGORY_ZH: Record<string, string> = {
-  'tea-ware': UI_ZH.objectsPage.catTea,
-  'incense-ritual': UI_ZH.objectsPage.catIncense,
+  'fortune-charms': UI_ZH.objectsPage.catFortune,
+  'heavenly-stems': UI_ZH.objectsPage.catStems,
+  'three-harmonies': UI_ZH.objectsPage.catHarmonies,
+  'raw-wood': UI_ZH.objectsPage.catRawWood,
   'writing-desk': UI_ZH.objectsPage.catWriting,
-  'talisman-objects': UI_ZH.objectsPage.catTalisman,
-  'home-altar': UI_ZH.objectsPage.catHome,
-  apparel: UI_ZH.objectsPage.catApparel,
   books: UI_ZH.objectsPage.catBooks,
 };
 

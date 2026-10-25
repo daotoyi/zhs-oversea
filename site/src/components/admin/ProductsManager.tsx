@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/admin/client';
 
@@ -18,17 +18,16 @@ type Prod = {
   stock: number;
 };
 
-// 必须与 lib/types.ts 的 ProductCategory 完全一致，否则存进去的品类
-// 前台筛选（/objects?category=...）匹配不到，商品会从对应分类消失。
-const CATS = ['books', 'writing-desk', 'tea-ware', 'incense-ritual', 'talisman-objects', 'home-altar', 'apparel'];
+// 与 shop 网址（CloudBase 真实分类）保持一致；同时必须与 lib/types.ts 的 ProductCategory
+// 完全一致，否则存进去的品类前台筛选（/objects?category=...）匹配不到，商品会从对应分类消失。
+const CATS = ['fortune-charms', 'heavenly-stems', 'three-harmonies', 'raw-wood', 'writing-desk', 'books'];
 const CAT_LABELS: Record<string, string> = {
-  books: '书籍',
-  'writing-desk': '文房',
-  'tea-ware': '茶器',
-  'incense-ritual': '香道',
-  'talisman-objects': '开运饰品',
-  'home-altar': '风水摆件',
-  apparel: '服饰',
+  'fortune-charms': '开运饰品',
+  'heavenly-stems': '天干十义',
+  'three-harmonies': '三合文创',
+  'raw-wood': '原木文创',
+  'writing-desk': '文房雅器',
+  books: '典籍',
 };
 const STATUSES = ['active', 'draft', 'archived'];
 
@@ -62,7 +61,7 @@ export default function ProductsManager({ initial, lang = 'en' }: { initial: Pro
     setCreating(true);
     setEditing(null);
     setForm({
-      title: '', title_zh: '', category: 'books', tagline: '', description: '', images: '',
+      title: '', title_zh: '', category: 'fortune-charms', tagline: '', description: '', images: '',
       price: '', compare_at: '', stock: '0', status: 'draft',
     });
     setMsg(null);
@@ -124,6 +123,18 @@ export default function ProductsManager({ initial, lang = 'en' }: { initial: Pro
 
   const showForm = editing || creating;
 
+  // Esc 关闭弹窗
+  useEffect(() => {
+    if (!showForm) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setEditing(null); setCreating(false); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showForm]);
+
+  const closeForm = () => { setEditing(null); setCreating(false); };
+
   return (
     <>
       <div className="adm-filters">
@@ -159,36 +170,43 @@ export default function ProductsManager({ initial, lang = 'en' }: { initial: Pro
       </div>
 
       {showForm && (
-        <div className="adm-card" style={{ marginTop: 20 }}>
-          <h2>{creating ? '新增商品' : '编辑商品'}</h2>
-          <div className="adm-form">
-            <div className="adm-form-row">
-              <label>标题（英文）<input value={form.title} onChange={(e) => set('title', e.target.value)} /></label>
-              <label>标题（中文）<input value={form.title_zh} onChange={(e) => set('title_zh', e.target.value)} /></label>
+        <div className="adm-modal-overlay" onClick={closeForm} role="dialog" aria-modal="true">
+          <div className="adm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="adm-modal-head">
+              <h2>{creating ? '新增商品' : '编辑商品'}</h2>
+              <button type="button" className="adm-modal-close" onClick={closeForm} aria-label="关闭">×</button>
             </div>
-            <div className="adm-form-row">
-              <label>品类
-                <select value={form.category} onChange={(e) => set('category', e.target.value)}>
-                  {CATS.map((c) => <option key={c} value={c}>{CAT_LABELS[c] ?? c}</option>)}
-                </select>
-              </label>
-              <label>状态
-                <select value={form.status} onChange={(e) => set('status', e.target.value)}>
-                  {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </label>
-            </div>
-            <div className="adm-form-row">
-              <label>价格（美元）<input value={form.price} onChange={(e) => set('price', e.target.value)} inputMode="decimal" /></label>
-              <label>划线价（美元，可选）<input value={form.compare_at} onChange={(e) => set('compare_at', e.target.value)} inputMode="decimal" /></label>
-            </div>
-            <label>库存数量<input value={form.stock} onChange={(e) => set('stock', e.target.value)} inputMode="numeric" /></label>
-            <label>卖点一句话（前台卡片副标题）<input value={form.tagline} onChange={(e) => set('tagline', e.target.value)} /></label>
-            <label>详情描述（前台商品页正文）<textarea rows={4} value={form.description} onChange={(e) => set('description', e.target.value)} /></label>
-            <label>图片路径（每行一个，如 /products/xxx.jpg）<textarea rows={3} value={form.images} onChange={(e) => set('images', e.target.value)} /></label>
-            <div className="adm-form-actions">
-              <button className="adm-btn" onClick={save} disabled={pending}>保存</button>
-              <button className="adm-btn outline" onClick={() => { setEditing(null); setCreating(false); }}>取消</button>
+            <div className="adm-modal-body">
+              <div className="adm-form">
+                <div className="adm-form-row">
+                  <label>标题（英文）<input value={form.title} onChange={(e) => set('title', e.target.value)} /></label>
+                  <label>标题（中文）<input value={form.title_zh} onChange={(e) => set('title_zh', e.target.value)} /></label>
+                </div>
+                <div className="adm-form-row">
+                  <label>品类
+                    <select value={form.category} onChange={(e) => set('category', e.target.value)}>
+                      {CATS.map((c) => <option key={c} value={c}>{CAT_LABELS[c] ?? c}</option>)}
+                    </select>
+                  </label>
+                  <label>状态
+                    <select value={form.status} onChange={(e) => set('status', e.target.value)}>
+                      {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </label>
+                </div>
+                <div className="adm-form-row">
+                  <label>价格（美元）<input value={form.price} onChange={(e) => set('price', e.target.value)} inputMode="decimal" /></label>
+                  <label>划线价（美元，可选）<input value={form.compare_at} onChange={(e) => set('compare_at', e.target.value)} inputMode="decimal" /></label>
+                </div>
+                <label>库存数量<input value={form.stock} onChange={(e) => set('stock', e.target.value)} inputMode="numeric" /></label>
+                <label>卖点一句话（前台卡片副标题）<input value={form.tagline} onChange={(e) => set('tagline', e.target.value)} /></label>
+                <label>详情描述（前台商品页正文）<textarea rows={4} value={form.description} onChange={(e) => set('description', e.target.value)} /></label>
+                <label>图片路径（每行一个，如 /products/xxx.jpg）<textarea rows={3} value={form.images} onChange={(e) => set('images', e.target.value)} /></label>
+                <div className="adm-form-actions">
+                  <button className="adm-btn" onClick={save} disabled={pending}>保存</button>
+                  <button className="adm-btn outline" onClick={closeForm}>取消</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

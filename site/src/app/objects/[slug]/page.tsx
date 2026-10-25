@@ -109,12 +109,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     : h.assurances.map(toTraditional);
 
   const categories: Record<string, [string, string]> = {
-    'tea-ware': ['Tea ware', UI_ZH.objectsPage.catTea],
-    'incense-ritual': ['Incense & ritual', UI_ZH.objectsPage.catIncense],
+    'fortune-charms': ['Fortune charms', UI_ZH.objectsPage.catFortune],
+    'heavenly-stems': ['Heavenly stems', UI_ZH.objectsPage.catStems],
+    'three-harmonies': ['Three harmonies', UI_ZH.objectsPage.catHarmonies],
+    'raw-wood': ['Raw wood', UI_ZH.objectsPage.catRawWood],
     'writing-desk': ['Writing & desk', UI_ZH.objectsPage.catWriting],
-    'talisman-objects': ['Talisman objects', UI_ZH.objectsPage.catTalisman],
-    'home-altar': ['Home & altar', UI_ZH.objectsPage.catHome],
-    apparel: ['Apparel', UI_ZH.objectsPage.catApparel],
     books: ['Books', UI_ZH.objectsPage.catBooks],
   };
 

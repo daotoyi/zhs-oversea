@@ -23,44 +23,40 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const CATEGORY_EN: Record<string, string> = {
-  'tea-ware': 'Tea ware',
-  'incense-ritual': 'Incense & ritual',
+  'fortune-charms': 'Fortune charms',
+  'heavenly-stems': 'Heavenly stems',
+  'three-harmonies': 'Three harmonies',
+  'raw-wood': 'Raw wood',
   'writing-desk': 'Writing & desk',
-  'talisman-objects': 'Talisman objects',
-  'home-altar': 'Home & altar',
-  apparel: 'Apparel',
   books: 'Books',
 };
 
 const CATEGORY_ZH: Record<string, string> = {
-  'tea-ware': UI_ZH.objectsPage.catTea,
-  'incense-ritual': UI_ZH.objectsPage.catIncense,
+  'fortune-charms': UI_ZH.objectsPage.catFortune,
+  'heavenly-stems': UI_ZH.objectsPage.catStems,
+  'three-harmonies': UI_ZH.objectsPage.catHarmonies,
+  'raw-wood': UI_ZH.objectsPage.catRawWood,
   'writing-desk': UI_ZH.objectsPage.catWriting,
-  'talisman-objects': UI_ZH.objectsPage.catTalisman,
-  'home-altar': UI_ZH.objectsPage.catHome,
-  apparel: UI_ZH.objectsPage.catApparel,
   books: UI_ZH.objectsPage.catBooks,
 };
 
 const FILTERS_EN = [
   { key: 'all', label: 'All' },
-  { key: 'tea-ware', label: 'Tea ware' },
-  { key: 'incense-ritual', label: 'Incense & ritual' },
+  { key: 'fortune-charms', label: 'Fortune charms' },
+  { key: 'heavenly-stems', label: 'Heavenly stems' },
+  { key: 'three-harmonies', label: 'Three harmonies' },
+  { key: 'raw-wood', label: 'Raw wood' },
   { key: 'writing-desk', label: 'Writing & desk' },
-  { key: 'talisman-objects', label: 'Talisman objects' },
-  { key: 'home-altar', label: 'Home & altar' },
-  { key: 'apparel', label: 'Apparel' },
   { key: 'books', label: 'Books' },
 ];
 
 const FILTERS_ZH = [
   { key: 'all', label: UI_ZH.objectsPage.filterAll },
-  { key: 'tea-ware', label: UI_ZH.objectsPage.catTea },
-  { key: 'incense-ritual', label: UI_ZH.objectsPage.catIncense },
+  { key: 'fortune-charms', label: UI_ZH.objectsPage.catFortune },
+  { key: 'heavenly-stems', label: UI_ZH.objectsPage.catStems },
+  { key: 'three-harmonies', label: UI_ZH.objectsPage.catHarmonies },
+  { key: 'raw-wood', label: UI_ZH.objectsPage.catRawWood },
   { key: 'writing-desk', label: UI_ZH.objectsPage.catWriting },
-  { key: 'talisman-objects', label: UI_ZH.objectsPage.catTalisman },
-  { key: 'home-altar', label: UI_ZH.objectsPage.catHome },
-  { key: 'apparel', label: UI_ZH.objectsPage.catApparel },
   { key: 'books', label: UI_ZH.objectsPage.catBooks },
 ];
 
