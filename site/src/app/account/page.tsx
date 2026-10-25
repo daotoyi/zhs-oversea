@@ -12,7 +12,7 @@ import {
   orderStats,
 } from '@/lib/account/dao';
 import { claimBirthdayGift, listLedger, nextTier, tierFor, REDEEM_OPTIONS } from '@/lib/account/points';
-import { accountLabels, orderStatusLabel } from '@/lib/account/ui';
+import { accountLabels } from '@/lib/account/ui';
 import { getStoreProducts } from '@/lib/storefront';
 import { formatUsd } from '@/lib/shipping';
 import { getNavStrings, getFooterStrings, getUi } from '@/lib/i18n';
@@ -20,6 +20,7 @@ import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { ProfileForm, PasswordForm } from '@/components/account/ProfileForm';
 import { RedeemPanel, LogoutButton, FavoriteRemove } from '@/components/account/RedeemPanel';
+import OrdersSearch from '@/components/account/OrdersSearch';
 
 export const dynamic = 'force-dynamic';
 
@@ -140,69 +141,11 @@ export default async function AccountPage() {
                   <h2 className="serif">{labels.ordersTitle}</h2>
                   <span className="acct-card-meta">{formatUsd(stats.spent)}</span>
                 </header>
-                {orders.length === 0 ? (
-                  <p className="acct-empty">
-                    {labels.ordersEmpty}{' '}
-                    <Link href="/objects" className="acct-link">
-                      {t('Browse objects', '去看看器物')}
-                    </Link>
-                  </p>
-                ) : (
-                  <ul className="acct-orders">
-                    {orders.map((o) => {
-                      let items: { slug?: string; name?: string; quantity?: number; unitAmountUsd?: number }[] = [];
-                      try {
-                        items = JSON.parse(o.items || '[]');
-                      } catch {
-                        items = [];
-                      }
-                      const status = orderStatusLabel(o.status, labels);
-                      return (
-                        <li key={o.id} className="acct-order">
-                          <div className="acct-order-top">
-                            <div>
-                              <span className="acct-order-id">{o.id}</span>
-                              <span className="acct-order-date">{dateFmt(o.created_at)}</span>
-                            </div>
-                            <div className="acct-order-right">
-                              <span className={`acct-pill acct-pill-${o.status}`}>{status}</span>
-                              <strong>{formatUsd(o.total)}</strong>
-                              <Link href={`/account/orders/${o.id}`} className="acct-link">
-                                {labels.viewOrder} →
-                              </Link>
-                            </div>
-                          </div>
-                          <ul className="acct-order-items">
-                            {items.map((it, i) => (
-                              <li key={`${o.id}-${i}`}>
-                                {it.slug ? (
-                                  <Link href={`/objects/${it.slug}`}>{it.name || it.slug}</Link>
-                                ) : (
-                                  <span>{it.name}</span>
-                                )}
-                                <span className="acct-order-qty">×{it.quantity ?? 1}</span>
-                                <span className="acct-order-amt">{formatUsd(it.unitAmountUsd ?? 0)}</span>
-                              </li>
-                            ))}
-                          </ul>
-                          <div className="acct-order-foot">
-                            {o.discount > 0 && (
-                              <span>
-                                {labels.discount} −{formatUsd(o.discount)}
-                                {o.coupon_code ? ` (${o.coupon_code})` : ''}
-                              </span>
-                            )}
-                            {o.tracking_no && (
-                              <span>
-                                {labels.trackNo}: <code>{o.tracking_no}</code>
-                              </span>
-                            )}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
+                <OrdersSearch
+                  orders={orders as never}
+                  labels={labels}
+                  locale={locale}
+                />
               </section>
 
               <section className="acct-card" id="acct-favorites">
