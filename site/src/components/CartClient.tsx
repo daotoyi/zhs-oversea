@@ -9,6 +9,7 @@ import type { Locale } from '@/lib/i18n/config';
 import type { StoreProductLite } from '@/lib/storefront';
 import { toTraditional } from '@/lib/i18n/convert';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
+import { CardCheckoutModal } from '@/components/CardCheckoutModal';
 
 const C = UI_ZH.common;
 
@@ -103,6 +104,8 @@ export function CartClient({
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponAppliedCode, setCouponAppliedCode] = useState<string | null>(null);
   const [provider, setProvider] = useState<'stripe' | 'paypal'>('stripe');
+  const [cardOpen, setCardOpen] = useState(false);
+  const clear = useCart((st) => st.clear);
   const s = STRINGS[locale];
 
   const payBaseStyle: CSSProperties = {
@@ -179,10 +182,15 @@ export function CartClient({
   }
 
   async function checkout() {
-    setBusy(true);
     setError(null);
+    // 信用卡 / Stripe：暂未接入 Stripe，点击后进入信用卡结算界面（演示）
+    if (provider === 'stripe') {
+      setCardOpen(true);
+      return;
+    }
+    setBusy(true);
     try {
-      const endpoint = provider === 'paypal' ? '/api/checkout/paypal' : '/api/checkout/session';
+      const endpoint = '/api/checkout/paypal';
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -317,6 +325,20 @@ export function CartClient({
           <span className="pay-badge">PAYPAL</span>
         </div>
       </aside>
+
+      {cardOpen && (
+        <CardCheckoutModal
+          locale={locale}
+          subtotalCents={subtotal}
+          shippingCents={shipping}
+          discountCents={couponDiscount}
+          onClose={() => setCardOpen(false)}
+          onPaid={() => {
+            clear();
+            setCardOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }
