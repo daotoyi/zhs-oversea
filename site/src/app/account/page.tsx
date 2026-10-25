@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { initDb } from '@/lib/db/loader';
 import { currentUser } from '@/lib/account/auth';
 import {
-  favoriteCount,
+  deleteFavorites,
   findUserById,
   listFavorites,
   listIdentities,
@@ -58,15 +58,20 @@ export default async function AccountPage() {
   const identities = listIdentities(user.id);
   const tier = tierFor(user.points);
   const upcoming = nextTier(user.points);
-  const favCount = favoriteCount(user.id);
 
   const products = await getStoreProducts();
   const bySlug = new Map(products.map((p) => [p.slug, p]));
+  // 清理孤儿收藏：商品已下架/目录更换后，favorites 里指向不存在商品的行会让
+  // 统计卡计数与下方列表对不上（与购物车幽灵行同一类问题）。加载时自动清理并自愈。
+  const staleSlugs = favorites.filter((f) => !bySlug.has(f.slug)).map((f) => f.slug);
+  if (staleSlugs.length > 0) deleteFavorites(user.id, staleSlugs);
+  // 计数与列表同源：只数「在售且可展示」的收藏，杜绝两边口径不一致
   const favProducts: { slug: string; product: (typeof products)[number] }[] = [];
   for (const f of favorites) {
     const p = bySlug.get(f.slug);
     if (p) favProducts.push({ slug: f.slug, product: p });
   }
+  const favCount = favProducts.length;
 
   const dateFmt = (ts: number) =>
     new Date(ts).toLocaleDateString(locale === 'en' ? 'en-US' : 'zh-CN', {

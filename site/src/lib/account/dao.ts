@@ -182,6 +182,20 @@ export function favoriteCount(userId: string): number {
   return get<{ n: number }>('SELECT COUNT(*) AS n FROM favorites WHERE user_id = ?', [userId])?.n ?? 0;
 }
 
+/**
+ * 批量删除收藏行 —— 用于清理「孤儿收藏」：
+ * 商品已下架或整批更换目录后，favorites 里会留下指向不存在商品的行，
+ * 导致账户页收藏计数与列表对不上（与购物车幽灵行同一类问题）。
+ */
+export function deleteFavorites(userId: string, slugs: string[]): void {
+  if (slugs.length === 0) return;
+  tx(() => {
+    for (const slug of slugs) {
+      run('DELETE FROM favorites WHERE user_id = ? AND slug = ?', [userId, slug]);
+    }
+  });
+}
+
 /* ── 订单 ── */
 
 export type AccountOrder = {
