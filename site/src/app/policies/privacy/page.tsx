@@ -62,6 +62,18 @@ export default async function PrivacyPage() {
               h.shareP
             )}</p>
 
+            <h2>{t('Third-party sign-in', '第三方账户登录')}</h2>
+            <p>{t(
+              'If you choose to sign in with Google or Apple, we receive the basic profile information those providers share with us — typically your email address, display name and profile picture — and use it only to create and sign you into your account. We never receive your password; this sign-in is governed by each provider’s own privacy policy (Google: privacy.google.com; Apple: apple.com/legal/privacy). You may disconnect the linked account at any time from your account settings.',
+              '如果您选择使用 Google 或 Apple 账户登录，我们会从相应服务商获取其共享的基础资料——通常包括您的电子邮件地址、显示名称和头像——并仅用于创建和登录您的账户。我们不会获取您的密码；该登录方式受服务商各自的隐私政策约束（Google：privacy.google.com；Apple：apple.com/legal/privacy）。您可以随时在账户设置中解除绑定。'
+            )}</p>
+
+            <h2>{t('Email communications', '电子邮件通信')}</h2>
+            <p>{t(
+              'We send email through our email provider (Resend). Transactional email — order confirmations, shipping notices and password resets — is sent because it is part of the service you asked for. Marketing email, such as the Sunday hexagram, is sent only if you opt in. Every marketing email includes a one-click unsubscribe link and a physical mailing address, and you can also unsubscribe at zhenhesheng.com/unsubscribe. Once you unsubscribe we keep your address on a suppression list so it is never emailed again.',
+              '我们通过邮件服务商（Resend）发送电子邮件。交易邮件——订单确认、发货通知与密码重置——因属于您所请求服务的一部分而发送。营销邮件（如「周日卦象」）仅在您主动订阅后才会发送。每封营销邮件都包含一键退订链接与实体邮寄地址，您也可以在 zhenhesheng.com/unsubscribe 退订。退订后我们会将您的邮箱保留在拒收名单中，不再向您发送营销邮件。'
+            )}</p>
+
             <h2>{t('Cookies', h.cookiesH)}</h2>
             <p>{t(
               'We use a small number of cookies: some are required for the site to work at all, and others tell us which pages are read so we can write more of what is useful. You can refuse the optional ones without losing any functionality.',
