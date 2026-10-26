@@ -3,7 +3,8 @@ import {
   listProducts, listOrders, listCustomers, listCoupons, listSaleEvents,
 } from '@/lib/admin/dao';
 import { seedCatalogIfEmpty } from '@/lib/admin/seed';
-import { LineChart, DonutChart } from '@/components/admin/Charts';
+import { DonutChart } from '@/components/admin/Charts';
+import { RevenueTrends } from '@/components/admin/RevenueTrends';
 import { categoryLabel } from '@/lib/categories';
 import { LOCALE_COOKIE, isLocale, DEFAULT_LOCALE } from '@/lib/i18n/config';
 import { cookies } from 'next/headers';
@@ -45,21 +46,8 @@ export default async function AdminDashboard() {
   const activeProducts = products.filter((p) => p.status === 'active').length;
   const activeSales = sales.filter((s) => s.status === 'active').length;
 
-  // 近 14 天营收趋势
-  const days = 14;
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const trend: { label: string; value: number }[] = [];
-  const byDay: Record<string, number> = {};
-  for (const o of orders) {
-    const d = new Date(o.created_at); d.setHours(0, 0, 0, 0);
-    const key = d.getTime();
-    byDay[key] = (byDay[key] ?? 0) + o.total;
-  }
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(today); d.setDate(d.getDate() - i);
-    const key = d.getTime();
-    trend.push({ label: `${d.getMonth() + 1}/${d.getDate()}`, value: Math.round((byDay[key] ?? 0) / 100) });
-  }
+  // 营收趋势（近14天/按月/按季度/按年 + 按金额/按订单）由客户端组件聚合
+  const trendOrders = orders.map((o) => ({ ts: new Date(o.created_at).getTime(), total: o.total }));
 
   // 各品类营收占比（用 seeded 商品的 slug→category 映射）
   const slugCat: Record<string, string> = {};
@@ -105,11 +93,7 @@ export default async function AdminDashboard() {
       </div>
 
       <div className="adm-charts">
-        <div className="adm-chart-card">
-          <h3>近 14 天营收（美元）</h3>
-          <div className="sub">每日成交总额</div>
-          <LineChart data={trend} height={220} />
-        </div>
+        <RevenueTrends orders={trendOrders} />
         <div className="adm-chart-card">
           <h3>品类营收占比</h3>
           <div className="sub">按订单商品品类聚合</div>
