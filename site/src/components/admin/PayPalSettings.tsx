@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/admin/client';
+import SecretInput from './SecretInput';
 
 type PayPalInitial = {
   clientId: string;
@@ -115,7 +116,7 @@ export default function PayPalSettings({ initial }: { initial: PayPalInitial }) 
       </label>
       <label className="adm-oauth-field">
         <span>Client Secret {initial.secretSet && <em>(已配置 ····{initial.secretTail})</em>}</span>
-        <input
+        <SecretInput
           value={clientSecret}
           onChange={(e) => setClientSecret(e.target.value)}
           placeholder={initial.secretSet ? '留空 = 不修改' : 'EQnc...'}

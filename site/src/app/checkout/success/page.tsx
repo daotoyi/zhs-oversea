@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
+import CartSettle from '@/components/CartSettle';
 import { getNavStrings, getFooterStrings, getUi } from '@/lib/i18n';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
@@ -14,7 +15,12 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default async function CheckoutSuccessPage() {
+export default async function CheckoutSuccessPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ session_id?: string }>;
+}) {
+  const { session_id } = await searchParams;
   const { locale, t } = await getUi();
   const navStrings = await getNavStrings();
   const footerStrings = await getFooterStrings();
@@ -23,6 +29,8 @@ export default async function CheckoutSuccessPage() {
 
   return (
     <>
+      {/* 付款成功 → 把本单买走的商品从购物车移除 */}
+      <CartSettle orderId={session_id} />
       <Nav strings={navStrings} />
       <section className="sec" style={{ paddingTop: 96, paddingBottom: 120 }}>
         <div className="wrap" style={{ maxWidth: 620, textAlign: 'center' }}>

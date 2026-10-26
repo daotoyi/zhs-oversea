@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/admin/client';
+import SecretInput from './SecretInput';
 
 type Initial = {
   googleClientId: string;
@@ -142,15 +143,15 @@ export default function OAuthSettings({ initial }: { initial: Initial }) {
               autoComplete="off"
             />
           </label>
-          <label className="adm-oauth-field">
-            <span>Client Secret {initial.googleSecretSet && <em>(已配置 ····{initial.googleSecretTail})</em>}</span>
-            <input
-              value={gSecret}
-              onChange={(e) => setGSecret(e.target.value)}
-              placeholder={initial.googleSecretSet ? '留空 = 不修改' : 'GOCSPX-…'}
-              autoComplete="off"
-            />
-          </label>
+<label className="adm-oauth-field">
+              <span>Client Secret {initial.googleSecretSet && <em>(已配置 ····{initial.googleSecretTail})</em>}</span>
+              <SecretInput
+                value={gSecret}
+                onChange={(e) => setGSecret(e.target.value)}
+                placeholder={initial.googleSecretSet ? '留空 = 不修改' : 'GOCSPX-…'}
+                autoComplete="off"
+              />
+            </label>
 
           <div className="adm-oauth-foot">
             <button className="btn btn-solid" type="button" disabled={busy === 'google'} onClick={saveGoogle}>
@@ -198,7 +199,9 @@ export default function OAuthSettings({ initial }: { initial: Initial }) {
           </div>
           <label className="adm-oauth-field">
             <span>Private Key（.p8 全文）{initial.appleKeySet && <em>(已配置)</em>}</span>
-            <textarea
+            <SecretInput
+              isTextarea={true}
+              rows={5}
               value={aP8}
               onChange={(e) => setAP8(e.target.value)}
               placeholder={initial.appleKeySet ? '留空 = 不修改' : '-----BEGIN PRIVATE KEY-----\n…\n-----END PRIVATE KEY-----'}

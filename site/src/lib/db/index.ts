@@ -49,6 +49,16 @@ export function getDbPath(): string {
   return path.join(resolveDataDir(), 'zhs.db');
 }
 
+/**
+ * 数据目录（存 zhs.db 与后台上传的图片）
+ *
+ * 上传物必须落在 .data 下：部署脚本会保留 .data，
+ * 而 public/ 每次发布会整包覆盖 —— 放那里等于每次发版丢图。
+ */
+export function getDataDir(): string {
+  return resolveDataDir();
+}
+
 export async function initDb(): Promise<Database> {
   const existing = state();
   if (existing) return existing.db;

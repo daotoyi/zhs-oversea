@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/admin/client';
+import SecretInput from './SecretInput';
 
 type Supp = { email: string; reason: string; source: string | null; created_at: number };
 
@@ -143,7 +144,7 @@ export default function MailSettings({ initial }: { initial: Status }) {
             <span>
               Resend API Key {initial.ready && <em>(已配置 ····{initial.keyTail})</em>}
             </span>
-            <input
+            <SecretInput
               value={resendKey}
               onChange={(e) => setResendKey(e.target.value)}
               placeholder={initial.ready ? '留空 = 不修改' : 're_…'}
@@ -208,7 +209,7 @@ export default function MailSettings({ initial }: { initial: Status }) {
             <span>
               Webhook 签名密钥 {initial.webhookSecretSet && <em>(已配置)</em>}
             </span>
-            <input
+            <SecretInput
               value={webhookSecret}
               onChange={(e) => setWebhookSecret(e.target.value)}
               placeholder={initial.webhookSecretSet ? '留空 = 不修改' : 'whsec_…（Resend 建 webhook 后给出）'}

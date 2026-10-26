@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect, type CSSProperties } from 'react';
-import { useCart } from '@/lib/cart';
+import { useCart, lineKey } from '@/lib/cart';
 import { getProduct } from '@/lib/products';
 import { formatUsd, shippingPriceCents } from '@/lib/shipping';
 import { FREE_SHIPPING_THRESHOLD_USD } from '@/lib/types';
@@ -36,6 +36,11 @@ type S = {
   couponInvalid: string;
   paymentMethod: string;
   pruned: (count: number) => string;
+  selectAll: string;
+  selectedCount: (n: number) => string;
+  checkoutSelected: (n: number) => string;
+  noneSelected: string;
+  itemUnit: string;
 };
 
 const STRINGS: Record<Locale, S> = {
@@ -62,6 +67,11 @@ const STRINGS: Record<Locale, S> = {
     paymentMethod: 'Payment method',
     pruned: (n) =>
       `Removed ${n} item${n === 1 ? '' : 's'} no longer available from your bag.`,
+    selectAll: 'Select all',
+    selectedCount: (n) => `${n} selected`,
+    checkoutSelected: (n) => `Checkout ${n} item${n === 1 ? '' : 's'}`,
+    noneSelected: 'Select at least one item to check out.',
+    itemUnit: 'each',
   },
   'zh-Hans': {
     empty: C.emptyBag,
@@ -85,6 +95,11 @@ const STRINGS: Record<Locale, S> = {
     couponInvalid: '优惠码无效或不可用。',
     paymentMethod: '支付方式',
     pruned: (n: number) => `已自动移除 ${n} 件失效商品（已下架或链接过期）。`,
+    selectAll: '全选',
+    selectedCount: (n: number) => `已选 ${n} 件`,
+    checkoutSelected: (n: number) => `结算选中商品（${n}）`,
+    noneSelected: '请至少勾选一件商品再结算。',
+    itemUnit: '单价',
   },
   'zh-Hant': {} as S,
 };
@@ -116,10 +131,20 @@ export function CartClient({
   const [couponAppliedCode, setCouponAppliedCode] = useState<string | null>(null);
   const [provider, setProvider] = useState<'stripe' | 'paypal'>('stripe');
   const [cardOpen, setCardOpen] = useState(false);
-  const clear = useCart((st) => st.clear);
   const sanitizeLines = useCart((st) => st.sanitizeLines);
+  const markPending = useCart((st) => st.markPending);
+  const settlePending = useCart((st) => st.settlePending);
+  const cancelPending = useCart((st) => st.cancelPending);
   const [prunedCount, setPrunedCount] = useState(0);
+  // 勾选结算：记「未选中」的行键，默认全部选中（新增商品也自动选中）
+  const [unselected, setUnselected] = useState<string[]>([]);
   const s = STRINGS[locale];
+
+  // 从 PayPal 取消回跳时作废待结算标记，避免下次成功付款误清别的东西
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (new URLSearchParams(window.location.search).get('cancelled') === '1') cancelPending();
+  }, [cancelPending]);
 
   // 清理幽灵行：商品已下架/目录更换后，localStorage 里的旧行无法解析，
   // 若不清理，角标数量会包含它们而本页过滤掉它们 —— 两边就对不上。
@@ -175,12 +200,37 @@ export function CartClient({
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
 
-  const subtotal = resolved.reduce((sum, r) => sum + r.variant.priceUsd * r.line.quantity, 0);
-  const totalWeight = resolved.reduce((sum, r) => sum + r.variant.weightGrams * r.line.quantity, 0);
+  // ── 勾选结算 ──────────────────────────────────────────────
+  // 只结算勾选的行：金额、运费、优惠券全部按「选中项」重算，
+  // 与服务端 resolveCart(items) 收到的 items 完全一致，不会出现「页面价 ≠ 实付价」。
+  const isSel = (r: (typeof resolved)[number]) => !unselected.includes(lineKey(r.line.slug, r.line.variantId));
+  const selectedRows = resolved.filter(isSel);
+  const allSelected = resolved.length > 0 && selectedRows.length === resolved.length;
+  const selectedSubtotal = selectedRows.reduce((sum, r) => sum + r.variant.priceUsd * r.line.quantity, 0);
+  const selectedWeight = selectedRows.reduce((sum, r) => sum + r.variant.weightGrams * r.line.quantity, 0);
+  const selectedCount = selectedRows.length;
+
   // 免运费券把运费清零（与服务端 lib/checkout/core.ts 同规则、同一算法）
-  const shippingBase = shippingPriceCents(subtotal, totalWeight);
+  const shippingBase = shippingPriceCents(selectedSubtotal, selectedWeight);
   const shipping = couponFreeship ? 0 : shippingBase;
-  const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD_USD - subtotal);
+  const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD_USD - selectedSubtotal);
+
+  function toggleRow(key: string) {
+    setUnselected((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
+    // 选择变了，已计算的券额可能不再成立，让用户重新应用（避免显示与实际不符）
+    setCouponDiscount(0);
+    setCouponFreeship(false);
+    setCouponAppliedCode(null);
+    setCouponMsg(null);
+  }
+
+  function toggleAll() {
+    setUnselected(allSelected ? resolved.map((r) => lineKey(r.line.slug, r.line.variantId)) : []);
+    setCouponDiscount(0);
+    setCouponFreeship(false);
+    setCouponAppliedCode(null);
+    setCouponMsg(null);
+  }
 
   async function applyCoupon() {
     setCouponMsg(null);
@@ -194,7 +244,11 @@ export function CartClient({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: lines.map((l) => ({ slug: l.slug, variantId: l.variantId, quantity: l.quantity })),
+          items: selectedRows.map((r) => ({
+            slug: r.line.slug,
+            variantId: r.line.variantId,
+            quantity: r.line.quantity,
+          })),
           couponCode: code,
         }),
       });
@@ -215,6 +269,12 @@ export function CartClient({
 
   async function checkout() {
     setError(null);
+    if (selectedCount === 0) {
+      setError(s.noneSelected);
+      return;
+    }
+    // 记下本单买的是哪几行 —— 支付成功页只清这些，没勾选的留车里
+    markPending(selectedRows.map((r) => lineKey(r.line.slug, r.line.variantId)));
     // 信用卡 / Stripe：暂未接入 Stripe，点击后进入信用卡结算界面（演示）
     if (provider === 'stripe') {
       setCardOpen(true);
@@ -227,7 +287,11 @@ export function CartClient({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: lines.map((l) => ({ slug: l.slug, variantId: l.variantId, quantity: l.quantity })),
+          items: selectedRows.map((r) => ({
+            slug: r.line.slug,
+            variantId: r.line.variantId,
+            quantity: r.line.quantity,
+          })),
           couponCode: couponAppliedCode ?? undefined,
         }),
       });
@@ -265,31 +329,49 @@ export function CartClient({
         </div>
       )}
       <div className="cart-lines">
-        {resolved.map(({ line, product, variant }) => (
-          <div key={`${line.slug}-${line.variantId}`} className="cart-line">
-            <Link href={`/objects/${product.slug}`} className="cart-thumb">
-              <img src={product.images[0]} alt={product.title} />
-            </Link>
-            <div className="cart-line-info">
-              <Link href={`/objects/${product.slug}`} className="cart-line-title">
-                {product.title}
+        <div className="cart-selbar">
+          <label className="cart-check">
+            <input type="checkbox" checked={allSelected} onChange={toggleAll} />
+            <span>{s.selectAll}</span>
+          </label>
+          <span className="cart-selbar-count">{s.selectedCount(selectedCount)}</span>
+        </div>
+        {resolved.map(({ line, product, variant }) => {
+          const key = lineKey(line.slug, line.variantId);
+          const checked = !unselected.includes(key);
+          return (
+            <div
+              key={key}
+              className="cart-line"
+              style={{ opacity: checked ? 1 : 0.55, transition: 'opacity .15s' }}
+            >
+              <label className="cart-check cart-check-line" title={s.selectAll}>
+                <input type="checkbox" checked={checked} onChange={() => toggleRow(key)} />
+              </label>
+              <Link href={`/objects/${product.slug}`} className="cart-thumb">
+                <img src={product.images[0]} alt={product.title} />
               </Link>
-              <div className="cart-line-zh">{product.titleZh}</div>
-              <div className="cart-line-variant">{variant.label}</div>
-              <button className="cart-remove" onClick={() => removeLine(line.slug, line.variantId)}>
-                {s.remove}
-              </button>
-            </div>
-            <div className="cart-line-right">
-              <div className="qty">
-                <button onClick={() => setQuantity(line.slug, line.variantId, line.quantity - 1)}>−</button>
-                <span>{line.quantity}</span>
-                <button onClick={() => setQuantity(line.slug, line.variantId, line.quantity + 1)}>+</button>
+              <div className="cart-line-info">
+                <Link href={`/objects/${product.slug}`} className="cart-line-title">
+                  {product.title}
+                </Link>
+                <div className="cart-line-zh">{product.titleZh}</div>
+                <div className="cart-line-variant">{variant.label}</div>
+                <button className="cart-remove" onClick={() => removeLine(line.slug, line.variantId)}>
+                  {s.remove}
+                </button>
               </div>
-              <div className="cart-line-price">{formatUsd(variant.priceUsd * line.quantity)}</div>
+              <div className="cart-line-right">
+                <div className="qty">
+                  <button onClick={() => setQuantity(line.slug, line.variantId, line.quantity - 1)}>−</button>
+                  <span>{line.quantity}</span>
+                  <button onClick={() => setQuantity(line.slug, line.variantId, line.quantity + 1)}>+</button>
+                </div>
+                <div className="cart-line-price">{formatUsd(variant.priceUsd * line.quantity)}</div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <aside className="cart-summary">
@@ -311,8 +393,13 @@ export function CartClient({
 
         <dl>
           <div>
-            <dt>{s.subtotal}</dt>
-            <dd>{formatUsd(subtotal)}</dd>
+            <dt>
+              {s.subtotal}
+              {selectedCount < resolved.length && (
+                <span style={{ fontSize: 11, color: 'var(--ash)', marginLeft: 6 }}>{s.selectedCount(selectedCount)}</span>
+              )}
+            </dt>
+            <dd>{formatUsd(selectedSubtotal)}</dd>
           </div>
           {couponDiscount > 0 && (
             <div>
@@ -326,7 +413,7 @@ export function CartClient({
           </div>
           <div>
             <dt>{s.delivery}</dt>
-            <dd>{totalWeight >= 2000 ? s.heavy : s.light}</dd>
+            <dd>{selectedWeight >= 2000 ? s.heavy : s.light}</dd>
           </div>
         </dl>
         <div className="cart-note">{s.duty}</div>
@@ -334,7 +421,7 @@ export function CartClient({
         {remaining > 0 && !couponFreeship && (
           <div className="cart-progress">
             <div className="cart-progress-bar">
-              <span style={{ width: `${Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD_USD) * 100)}%` }} />
+              <span style={{ width: `${Math.min(100, (selectedSubtotal / FREE_SHIPPING_THRESHOLD_USD) * 100)}%` }} />
             </div>
             <p>{s.away(formatUsd(remaining))}</p>
           </div>
@@ -354,8 +441,14 @@ export function CartClient({
           </div>
         </div>
 
-        <button className="btn btn-solid" style={{ width: '100%' }} onClick={checkout} disabled={busy}>
-          {busy ? s.opening : s.checkout}
+        <button
+          className="btn btn-solid"
+          style={{ width: '100%' }}
+          onClick={checkout}
+          disabled={busy || selectedCount === 0}
+          title={selectedCount === 0 ? s.noneSelected : undefined}
+        >
+          {busy ? s.opening : selectedCount === resolved.length ? s.checkout : s.checkoutSelected(selectedCount)}
         </button>
         <div className="pay-row" style={{ justifyContent: 'center', marginTop: 16 }}>
           <span className="pay-badge">VISA</span>
@@ -369,12 +462,13 @@ export function CartClient({
       {cardOpen && (
         <CardCheckoutModal
           locale={locale}
-          subtotalCents={subtotal}
+          subtotalCents={selectedSubtotal}
           shippingCents={shipping}
           discountCents={couponDiscount}
           onClose={() => setCardOpen(false)}
           onPaid={() => {
-            clear();
+            // 只清掉本单买走的行，未勾选的仍留在购物车
+            settlePending();
             setCardOpen(false);
           }}
         />

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useRef, type ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/admin/client';
 import { categoryLabel, categoryOptions } from '@/lib/categories';
@@ -34,6 +34,11 @@ export default function ProductsManager({ initial, lang = 'en' }: { initial: Pro
   const [editing, setEditing] = useState<Prod | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
+  // 图片单独用数组管理（要直接显示缩略图、可删可换封面、可从本地上传）
+  const [imgList, setImgList] = useState<string[]>([]);
+  const [imgUrlInput, setImgUrlInput] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<{ t: 'ok' | 'err'; m: string } | null>(null);
   // 表头下拉筛选：'' 表示全部
   const [catFilter, setCatFilter] = useState('');
@@ -48,11 +53,12 @@ export default function ProductsManager({ initial, lang = 'en' }: { initial: Pro
     setCreating(false);
     let imgs: string[] = [];
     try { imgs = JSON.parse(p.images || '[]'); } catch { imgs = []; }
+    setImgList(imgs);
+    setImgUrlInput('');
     setForm({
       title: p.title, title_zh: p.title_zh ?? '', category: p.category,
       collection: p.collection ?? '',
       tagline: p.tagline ?? '', description: p.description ?? '',
-      images: imgs.join('\n'),
       price: String(p.price_usd / 100), compare_at: p.compare_at_usd ? String(p.compare_at_usd / 100) : '',
       stock: String(p.stock), status: p.status,
     });
@@ -61,22 +67,66 @@ export default function ProductsManager({ initial, lang = 'en' }: { initial: Pro
   function openCreate() {
     setCreating(true);
     setEditing(null);
+    setImgList([]);
+    setImgUrlInput('');
     setForm({
       title: '', title_zh: '', category: 'fortune-charms', collection: '',
-      tagline: '', description: '', images: '',
+      tagline: '', description: '',
       price: '', compare_at: '', stock: '0', status: 'draft',
     });
     setMsg(null);
+  }
+
+  // ── 图片：本地上传 ────────────────────────────────────────
+  async function uploadFiles(e: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    setUploading(true);
+    setMsg(null);
+    try {
+      const fd = new FormData();
+      files.forEach((f) => fd.append('file', f));
+      const res = await fetch('/api/admin/uploads', {
+        method: 'POST',
+        body: fd,
+        credentials: 'same-origin',
+      });
+      const data = (await res.json().catch(() => null)) as { urls?: string[]; error?: string } | null;
+      if (!res.ok || !data?.urls?.length) throw new Error(data?.error ?? '上传失败');
+      setImgList((prev) => [...prev, ...data.urls!]);
+    } catch (err) {
+      setMsg({ t: 'err', m: (err as Error).message });
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = ''; // 允许再次选同一个文件
+    }
+  }
+
+  function addByUrl() {
+    const url = imgUrlInput.trim();
+    if (!url) return;
+    setImgList((prev) => [...prev, url]);
+    setImgUrlInput('');
+  }
+
+  function removeImage(idx: number) {
+    setImgList((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  /** 设为封面 = 挪到数组第一位（前台一律取 images[0] 当主图） */
+  function makeCover(idx: number) {
+    setImgList((prev) => {
+      if (idx === 0) return prev;
+      const next = [...prev];
+      const [pick] = next.splice(idx, 1);
+      return [pick, ...next];
+    });
   }
 
   function set(k: string, v: string) { setForm((f) => ({ ...f, [k]: v })); }
 
   async function save() {
     setMsg(null);
-    const imageList = (form.images ?? '')
-      .split('\n')
-      .map((s) => s.trim())
-      .filter(Boolean);
     const payload: Record<string, unknown> = {
       title: form.title.trim(),
       title_zh: form.title_zh.trim() || null,
@@ -84,7 +134,7 @@ export default function ProductsManager({ initial, lang = 'en' }: { initial: Pro
       collection: form.collection?.trim() || null,
       tagline: form.tagline?.trim() || null,
       description: form.description?.trim() || null,
-      images: imageList,
+      images: imgList,
       price_usd: Math.round((Number(form.price) || 0) * 100),
       compare_at_usd: form.compare_at ? Math.round(Number(form.compare_at) * 100) : null,
       stock: Number(form.stock) || 0,
@@ -250,7 +300,71 @@ export default function ProductsManager({ initial, lang = 'en' }: { initial: Pro
                 </div>
                 <label>卖点一句话（前台卡片副标题）<input value={form.tagline} onChange={(e) => set('tagline', e.target.value)} /></label>
                 <label>详情描述（前台商品页正文）<textarea rows={4} value={form.description} onChange={(e) => set('description', e.target.value)} /></label>
-                <label>图片路径（每行一个，如 /products/xxx.jpg）<textarea rows={3} value={form.images} onChange={(e) => set('images', e.target.value)} /></label>
+
+                {/* ── 商品图片：直接看图，本地一键上传 ── */}
+                <div className="adm-img-field">
+                  <div className="adm-img-label">
+                    商品图片<span>第一张是封面 · 点任意一张可设为封面</span>
+                  </div>
+
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
+                    multiple
+                    onChange={uploadFiles}
+                    style={{ display: 'none' }}
+                  />
+
+                  <div className="adm-img-grid">
+                    {imgList.map((src, i) => (
+                      <div key={`${src}-${i}`} className={`adm-img-item${i === 0 ? ' cover' : ''}`}>
+                        <img src={src} alt="" onClick={() => makeCover(i)} title="点击设为封面" />
+                        {i === 0 && <span className="adm-img-badge">封面</span>}
+                        <button
+                          type="button"
+                          className="adm-img-del"
+                          onClick={() => removeImage(i)}
+                          title="删除这张"
+                          aria-label="删除这张"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+
+                    <button
+                      type="button"
+                      className="adm-img-add"
+                      onClick={() => fileRef.current?.click()}
+                      disabled={uploading}
+                      title="从电脑选择图片（可多选）"
+                    >
+                      {uploading ? '上传中…' : (
+                        <>
+                          <span className="adm-img-add-plus">＋</span>
+                          <span>本地上传</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="adm-img-url">
+                    <input
+                      value={imgUrlInput}
+                      onChange={(e) => setImgUrlInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addByUrl(); } }}
+                      placeholder="也可粘贴图片链接，如 https://… 或 /products/xxx.jpg"
+                    />
+                    <button className="adm-btn outline sm" type="button" onClick={addByUrl} disabled={!imgUrlInput.trim()}>
+                      添加链接
+                    </button>
+                  </div>
+                  <p className="adm-img-note">
+                    支持 JPG / PNG / WebP / AVIF / GIF，单张不超过 8MB。上传的图存在服务器 .data 目录，发版不会丢。
+                  </p>
+                </div>
+
                 <div className="adm-form-actions">
                   <button className="adm-btn" onClick={save} disabled={pending}>保存</button>
                   <button className="adm-btn outline" onClick={closeForm}>取消</button>

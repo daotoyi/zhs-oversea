@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
+import CartSettle from '@/components/CartSettle';
 import { getNavStrings, getFooterStrings, getUi } from '@/lib/i18n';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
@@ -71,6 +72,8 @@ function renderSuccess(
 ) {
   return (
     <>
+      {/* 付款已落库 → 把本单买走的商品从购物车移除 */}
+      <CartSettle orderId={orderId} />
       <Nav strings={navStrings} />
       <section className="sec" style={{ paddingTop: 96, paddingBottom: 120 }}>
         <div className="wrap" style={{ maxWidth: 620, textAlign: 'center' }}>
