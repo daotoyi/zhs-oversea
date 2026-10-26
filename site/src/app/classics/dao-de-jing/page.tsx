@@ -4,6 +4,7 @@ import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { getNavStrings, getFooterStrings, getUi } from '@/lib/i18n';
 import { CHAPTERS } from '@/data/chapters';
+import { CHAPTERS_ZH, zh } from '@/lib/i18n/zh-hans-content';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
 
@@ -22,7 +23,6 @@ export default async function DaoDeJingIndex() {
   const navStrings = await getNavStrings();
   const footerStrings = await getFooterStrings();
 
-  const TRANSLATED = Object.keys(CHAPTERS).map(Number).sort((a, b) => a - b);
   const h = UI_ZH.classicsPage;
   const Z = (s: string) => (locale === 'en' ? s : toTraditional(s));
 
@@ -46,19 +46,25 @@ export default async function DaoDeJingIndex() {
 
           <div className="chapter-grid">
             {Array.from({ length: 81 }, (_, i) => i + 1).map((n) => {
-              const live = TRANSLATED.includes(n);
-              return live ? (
+              const base = CHAPTERS[n];
+              if (!base) {
+                return (
+                  <div key={n} className="chapter-cell disabled">
+                    <span className="chapter-n">{String(n).padStart(2, '0')}</span>
+                    <span className="chapter-title serif" style={{ opacity: 0.35 }}>
+                      {t('Forthcoming', h.forthcoming)}
+                    </span>
+                  </div>
+                );
+              }
+              // 主题双语：中文主题（zh-Hant 自动转繁体）+ 英文主题，同时显示
+              const zhTitle = (CHAPTERS_ZH[n]?.title ? (zh(CHAPTERS_ZH[n].title, locale) as string) : null) ?? base.zh;
+              return (
                 <Link key={n} href={`/classics/dao-de-jing/${n}`} className="chapter-cell">
                   <span className="chapter-n">{String(n).padStart(2, '0')}</span>
-                  <span className="chapter-title serif">{t(`Read chapter ${n}`, `读第${n}章`)}</span>
+                  <span className="chapter-title cjk">{zhTitle}</span>
+                  <span className="chapter-zh serif">{base.title}</span>
                 </Link>
-              ) : (
-                <div key={n} className="chapter-cell disabled">
-                  <span className="chapter-n">{String(n).padStart(2, '0')}</span>
-                  <span className="chapter-title serif" style={{ opacity: 0.35 }}>
-                    {t('Forthcoming', h.forthcoming)}
-                  </span>
-                </div>
               );
             })}
           </div>

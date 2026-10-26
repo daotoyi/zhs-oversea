@@ -3,11 +3,10 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
-import { getNavStrings, getFooterStrings, getUi, localizeChapter } from '@/lib/i18n';
+import { getNavStrings, getFooterStrings, getUi } from '@/lib/i18n';
 import { CHAPTERS } from '@/data/chapters';
-import { CHAPTERS_ZH } from '@/lib/i18n/zh-hans-content';
+import { CHAPTERS_ZH, zh } from '@/lib/i18n/zh-hans-content';
 import { UI_ZH } from '@/lib/i18n/zh-hans';
-import { toTraditional } from '@/lib/i18n/convert';
 
 export function generateStaticParams() {
   return Object.keys(CHAPTERS).map((n) => ({ n }));
@@ -42,9 +41,14 @@ export default async function ChapterPage({ params }: { params: Promise<{ n: str
   const { locale, t } = await getUi();
   const navStrings = await getNavStrings();
   const footerStrings = await getFooterStrings();
-  const chapter = await localizeChapter(base, num);
   const h = UI_ZH.classicsPage;
-  const Z = (s: string) => (locale === 'en' ? s : toTraditional(s));
+  // 双语展示：英文取 CHAPTERS 原文，中文取 CHAPTERS_ZH（zh-Hant 自动转繁体），两语同时显示，
+  // 参照六十四卦方案。不走 localizeChapter——它会把英文覆盖成中文。
+  const zc = CHAPTERS_ZH[num];
+  const zhText = zc?.text ? (zh(zc.text, locale) as string) : null;
+  const zhNote = zc?.note ? (zh(zc.note, locale) as string) : null;
+  const zhPractice = zc?.practice ? (zh(zc.practice, locale) as string) : null;
+  const zhTheme = zc?.title ? (zh(zc.title, locale) as string) : null;
 
   const numbers = Object.keys(CHAPTERS).map(Number).sort((a, b) => a - b);
   const idx = numbers.indexOf(num);
@@ -62,25 +66,40 @@ export default async function ChapterPage({ params }: { params: Promise<{ n: str
           <div className="eyebrow" style={{ color: 'var(--cinnabar)', marginBottom: 14 }}>
             {t(`Chapter ${num}`, `第${num}章`)}
           </div>
+          {/* 标题双语：英文主题为主标题，中文主题紧随其下 */}
           <h1 className="serif" style={{ fontWeight: 300, fontSize: 'clamp(2rem, 4vw, 3rem)', lineHeight: 1.12, marginBottom: 10 }}>
-            {chapter.title}
+            {base.title}
           </h1>
-          <div className="cjk" style={{ fontSize: 16, color: 'var(--ash)', letterSpacing: '0.16em', marginBottom: 40 }}>
-            {chapter.zh}
+          <div className="cjk" style={{ fontSize: 20, color: 'var(--ink)', letterSpacing: '0.16em', marginBottom: 40 }}>
+            {zhTheme ?? base.zh}
           </div>
 
-          <blockquote className="chapter-quote">{chapter.text}</blockquote>
+          <section className="hex-sec" style={{ borderTop: 'none', paddingTop: 0, marginTop: 0 }}>
+            <h2 className="hex-sec-label">{t('The Text', '原文')}</h2>
+            {zhText && <p className="hex-classical cjk">{zhText}</p>}
+            <p className="hex-en">{base.text}</p>
+          </section>
 
-          <h2 className="serif" style={{ fontWeight: 400, fontSize: 24, margin: '40px 0 14px' }}>
-            {t('Reading it', h.readingHeading)}
-          </h2>
-          <p style={{ fontSize: 15.5, lineHeight: 1.85, color: '#3A352E' }}>{chapter.note}</p>
+          <section className="hex-sec">
+            <h2 className="hex-sec-label">{t('Reading it', h.readingHeading)}</h2>
+            <p style={{ fontSize: 15.5, lineHeight: 1.85, color: '#3A352E' }}>{base.note}</p>
+            {zhNote && (
+              <p className="cjk" style={{ fontSize: 14.5, lineHeight: 1.9, color: 'var(--ash)', marginTop: 10 }}>
+                {zhNote}
+              </p>
+            )}
+          </section>
 
           <div className="practice-box">
             <div className="eyebrow" style={{ marginBottom: 10 }}>
               {t('Practice for the week', h.practiceHeading)}
             </div>
-            <p style={{ fontFamily: 'var(--serif)', fontSize: 19, lineHeight: 1.6 }}>{chapter.practice}</p>
+            <p style={{ fontFamily: 'var(--serif)', fontSize: 19, lineHeight: 1.6 }}>{base.practice}</p>
+            {zhPractice && (
+              <p className="cjk" style={{ fontFamily: 'var(--serif)', fontSize: 16, lineHeight: 1.8, color: 'var(--ash)', marginTop: 10 }}>
+                {zhPractice}
+              </p>
+            )}
           </div>
 
           <div className="chapter-nav">
