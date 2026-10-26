@@ -184,7 +184,7 @@ button {
 
 .brand {
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* logo 顶边与 ZHEN HE SHENG 文字顶边平齐 */
   gap: 11px;
 }
 
@@ -199,8 +199,8 @@ button {
 }
 
 .brand-logo {
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
   display: block;
   flex: none;
