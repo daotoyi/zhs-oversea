@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS coupons (
   ends_at INTEGER,
   status TEXT NOT NULL DEFAULT 'active',
   acquisition_mode TEXT NOT NULL DEFAULT 'manual',  -- manual: 手动发放; auto: 公开领取
+  show_on_home INTEGER NOT NULL DEFAULT 0,  -- 1=在网站首页浮动展示
   created_by TEXT,
   created_at INTEGER NOT NULL
 );
@@ -169,6 +170,14 @@ CREATE TABLE IF NOT EXISTS users (
   marketing_opt_in INTEGER NOT NULL DEFAULT 1,
   email_verified INTEGER NOT NULL DEFAULT 0,
   birthday_gift_year INTEGER,                 -- 最近一次领取生日礼的年份
+  addr_name TEXT,                             -- 收货地址（默认收件人，结账时可带出）
+  addr_phone TEXT,
+  addr_country TEXT,
+  addr_state TEXT,
+  addr_city TEXT,
+  addr_line1 TEXT,
+  addr_line2 TEXT,
+  addr_postal TEXT,
   created_at INTEGER NOT NULL,
   last_login_at INTEGER
 );

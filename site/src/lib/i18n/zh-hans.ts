@@ -363,7 +363,7 @@ export const UI_ZH = {
     allHexagrams: '全部六十四卦 →',
     forthcoming: '即将刊出',
     chapterCount: '章',
-    monthlyNote: '按月陆续刊出。会员随写随得。',
+    monthlyNote: '八十一章已全数刊出，欢迎随时通读。',
     backToClassics: '← 经典',
     backToDaoDeJing: '← 德道经',
     backToYijing: '← 六十四卦',

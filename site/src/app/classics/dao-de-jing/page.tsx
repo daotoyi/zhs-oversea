@@ -39,8 +39,8 @@ export default async function DaoDeJingIndex() {
           </h1>
           <p style={{ fontSize: 15, color: 'var(--ash)', maxWidth: 560, lineHeight: 1.8, marginBottom: 48 }}>
             {t(
-              `Eighty-one chapters from the Mawangdui silk manuscript. ${TRANSLATED.length} chapters are published so far; the rest follow monthly. Each carries the text, a reading, and a practice for the week.`,
-              `八十一章，皆自马王堆帛书出。已刊 ${TRANSLATED.length} 章，其余按月续出。每章含原文、读法与本周功课。`
+              'All eighty-one chapters of the Mawangdui silk manuscript, published in full. Each carries the text, a reading, and a practice for the week.',
+              `八十一章，皆自马王堆帛书出，现已全数刊出。每章含原文、读法与本周功课。`
             )}
           </p>
 

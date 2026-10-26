@@ -10,7 +10,7 @@
 
 import crypto from 'node:crypto';
 import { all, get, run, tx, now } from '@/lib/db/loader';
-import { saveCoupon } from '@/lib/admin/dao';
+import { saveCoupon, recordCouponClaim } from '@/lib/admin/dao';
 import { findUserById } from './dao';
 import type { UserRow } from './dao';
 
@@ -75,6 +75,42 @@ function awardedAlready(userId: string, reason: string, ref: string): boolean {
 export function awardSignup(userId: string): void {
   if (awardedAlready(userId, 'signup', userId)) return;
   award(userId, SIGNUP_BONUS, 'signup', userId, '注册礼');
+}
+
+/**
+ * 新人礼：每个新注册用户发一张「免运费」券。
+ * - 独立一次性码（max_uses=1）：computeDiscount 不校验 per_customer_limit，
+ *   用独立码 + max_uses 才能确保「一人一张、只能用一次」，不会被反复刷。
+ * - 幂等：靠 coupon_claims 里是否已有 WELCOME- 码判定，注册流程重复调用也只发一次。
+ * - 同时写 coupon_claims 归属记录，「我的优惠券」列表直接 JOIN 出来即可。
+ */
+export function grantWelcomeCoupon(userId: string, email: string): string | null {
+  const normalized = email.trim().toLowerCase();
+  const already = get<{ x: number }>(
+    `SELECT 1 AS x FROM coupon_claims cc
+     JOIN coupons c ON c.code = cc.code
+     WHERE cc.email = ? AND c.code LIKE 'WELCOME-%'`,
+    [normalized]
+  );
+  if (already) return null;
+
+  const code = `WELCOME-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+  const t = now();
+  saveCoupon({
+    code,
+    type: 'freeship',
+    value: 0,
+    min_subtotal: 0,
+    max_uses: 1,
+    per_customer_limit: 1,
+    starts_at: t,
+    ends_at: t + 180 * 24 * 60 * 60 * 1000,
+    status: 'active',
+    acquisition_mode: 'manual',
+    created_by: `welcome:${userId}`,
+  });
+  recordCouponClaim(code, normalized);
+  return code;
 }
 
 export function awardOrderPoints(input: { userId: string; orderId: string; totalCents: number }): number | null {
@@ -163,6 +199,7 @@ export function claimBirthdayGift(user: UserRow): BirthdayResult {
     status: 'active',
     created_by: `user:${user.id}`,
   });
+  recordCouponClaim(code, user.email);
   award(user.id, BIRTHDAY_BONUS, 'birthday', `${user.id}:${currentYear}`, '生日礼积分');
   run('UPDATE users SET birthday_gift_year = ? WHERE id = ?', [currentYear, user.id]);
 
@@ -197,6 +234,7 @@ export function redeemPoints(userId: string, optionPoints: number): RedeemResult
     status: 'active',
     created_by: `user:${userId}`,
   });
+  recordCouponClaim(code, user.email);
 
   return { ok: true, couponCode: code, valueCents: option.valueCents, points: balance };
 }

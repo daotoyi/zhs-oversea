@@ -453,6 +453,7 @@ export type Coupon = {
   ends_at: number | null;
   status: string;
   acquisition_mode: string;
+  show_on_home: number;
   claim_count?: number;
   created_by: string | null;
   created_at: number;
@@ -469,12 +470,29 @@ export function findCoupon(code: string): Coupon | null {
   return get<Coupon>('SELECT * FROM coupons WHERE code = ?', [code.toUpperCase()]);
 }
 
+/**
+ * 取「可在首页浮动展示」的券：已开启首页展示、启用、且在有效期内。
+ * 按紧急度排序——有到期时间的优先、且越早到期越靠前（无期限的排最后）。
+ * 首页挂件只认这一份数据：券一旦过期或关掉开关，自然不再出现。
+ */
+export function getHomeCoupons(): Coupon[] {
+  const now = Date.now();
+  return all<Coupon>(
+    `SELECT * FROM coupons
+     WHERE show_on_home = 1 AND status = 'active'
+       AND (starts_at IS NULL OR starts_at <= ?)
+       AND (ends_at IS NULL OR ends_at >= ?)
+     ORDER BY (ends_at IS NULL) ASC, ends_at ASC`,
+    [now, now]
+  );
+}
+
 export function saveCoupon(input: Partial<Coupon> & { code: string }): Coupon {
   const existing = findCoupon(input.code);
   if (existing) {
     const fields: string[] = [];
     const vals: unknown[] = [];
-    for (const k of ['type', 'value', 'min_subtotal', 'max_uses', 'per_customer_limit', 'starts_at', 'ends_at', 'status', 'acquisition_mode'] as const) {
+    for (const k of ['type', 'value', 'min_subtotal', 'max_uses', 'per_customer_limit', 'starts_at', 'ends_at', 'status', 'acquisition_mode', 'show_on_home'] as const) {
       if (input[k] !== undefined) { fields.push(`${k} = ?`); vals.push(input[k]); }
     }
     if (fields.length) {
@@ -485,12 +503,12 @@ export function saveCoupon(input: Partial<Coupon> & { code: string }): Coupon {
   }
   run(
     `INSERT INTO coupons (code, type, value, min_subtotal, max_uses, used_count, per_customer_limit,
-      starts_at, ends_at, status, acquisition_mode, created_by, created_at)
-     VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)`,
+      starts_at, ends_at, status, acquisition_mode, show_on_home, created_by, created_at)
+     VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       input.code.toUpperCase(), input.type ?? 'percent', input.value ?? 0, input.min_subtotal ?? 0,
       input.max_uses ?? 0, input.per_customer_limit ?? 0, input.starts_at ?? null, input.ends_at ?? null,
-      input.status ?? 'active', input.acquisition_mode ?? 'manual', input.created_by ?? null, now(),
+      input.status ?? 'active', input.acquisition_mode ?? 'manual', input.show_on_home ?? 0, input.created_by ?? null, now(),
     ]
   );
   return findCoupon(input.code)!;

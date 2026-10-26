@@ -16,6 +16,7 @@ type Cp = {
   ends_at: number | null;
   status: string;
   acquisition_mode: string;
+  show_on_home: number;
   claim_count?: number;
   created_at: number;
 };
@@ -46,14 +47,15 @@ export default function CouponsManager({ initial }: { initial: Cp[] }) {
       code: c.code, type: c.type,
       value: String(c.type === 'percent' ? c.value : c.value / 100),
       min_subtotal: String(c.min_subtotal / 100), max_uses: String(c.max_uses),
-      per_customer_limit: String(c.per_customer_limit), starts_at: toLocal(c.starts_at), ends_at: toLocal(c.ends_at), status: c.status,
+      per_customer_limit: String(c.per_customer_limit),       starts_at: toLocal(c.starts_at), ends_at: toLocal(c.ends_at), status: c.status,
       acquisition_mode: c.acquisition_mode || 'manual',
+      show_on_home: String(c.show_on_home ?? 0),
     });
     setMsg(null);
   }
   function openCreate() {
     setCreating(true); setEditing(null);
-    setForm({ code: '', type: 'percent', value: '10', min_subtotal: '0', max_uses: '0', per_customer_limit: '1', starts_at: '', ends_at: '', status: 'active', acquisition_mode: 'manual' });
+    setForm({ code: '', type: 'percent', value: '10', min_subtotal: '0', max_uses: '0', per_customer_limit: '1', starts_at: '', ends_at: '', status: 'active', acquisition_mode: 'manual', show_on_home: '0' });
     setMsg(null);
   }
   function set(k: string, v: string) { setForm((f) => ({ ...f, [k]: v })); }
@@ -73,6 +75,7 @@ export default function CouponsManager({ initial }: { initial: Cp[] }) {
       ends_at: fromLocal(form.ends_at),
       status: form.status,
       acquisition_mode: form.acquisition_mode,
+      show_on_home: form.show_on_home === '1' ? 1 : 0,
     };
     if (editing) payload.code = editing.code;
     if (!payload.code) { setMsg({ t: 'err', m: '券码必填' }); return; }
@@ -85,6 +88,15 @@ export default function CouponsManager({ initial }: { initial: Cp[] }) {
   async function remove(c: Cp) {
     if (!confirm(`确认删除优惠券「${c.code}」？`)) return;
     await apiFetch('/api/admin/coupons', { method: 'POST', body: { code: c.code, action: 'delete' } });
+    startTransition(() => router.refresh());
+  }
+
+  /** 一键切换「首页展示」开关（不打开编辑框，直接落库） */
+  async function toggleHome(c: Cp) {
+    await apiFetch('/api/admin/coupons', {
+      method: 'POST',
+      body: { code: c.code, show_on_home: c.show_on_home ? 0 : 1 },
+    });
     startTransition(() => router.refresh());
   }
 
@@ -138,9 +150,9 @@ export default function CouponsManager({ initial }: { initial: Cp[] }) {
 
       <div className="adm-card">
         <table className="adm-table">
-          <thead><tr><th>券码</th><th>类型</th><th>门槛</th><th>用量</th><th>有效期</th><th>领取方式</th><th>状态</th><th className="actions">操作</th></tr></thead>
+          <thead><tr><th>券码</th><th>类型</th><th>门槛</th><th>用量</th><th>有效期</th><th>领取方式</th><th>首页</th><th>状态</th><th className="actions">操作</th></tr></thead>
           <tbody>
-            {initial.length === 0 && <tr><td colSpan={8}><div className="adm-empty">暂无优惠券</div></td></tr>}
+            {initial.length === 0 && <tr><td colSpan={9}><div className="adm-empty">暂无优惠券</div></td></tr>}
             {initial.map((c) => (
               <tr key={c.code}>
                 <td><strong>{c.code}</strong></td>
@@ -156,6 +168,16 @@ export default function CouponsManager({ initial }: { initial: Cp[] }) {
                     : '手动发放'}
                 </td>
                 <td><span className={`adm-status ${c.status}`}>{c.status}</span></td>
+                <td>
+                  <button
+                    className={`adm-btn sm ${c.show_on_home ? '' : 'outline'}`}
+                    onClick={() => toggleHome(c)}
+                    title="切换是否在网站首页浮动展示"
+                    disabled={c.status !== 'active'}
+                  >
+                    {c.show_on_home ? '展示中' : '不展示'}
+                  </button>
+                </td>
                 <td className="actions">
                   <button className="adm-btn outline sm" onClick={() => open(c)}>编辑</button>
                   {c.acquisition_mode === 'auto' && (
@@ -224,6 +246,10 @@ export default function CouponsManager({ initial }: { initial: Cp[] }) {
                 <option value="active">启用</option>
                 <option value="disabled">停用</option>
               </select>
+            </label>
+            <label className="adm-check">
+              <input type="checkbox" checked={form.show_on_home === '1'} onChange={(e) => set('show_on_home', e.target.checked ? '1' : '0')} />
+              在网站首页浮动展示（发布后首页会出现优惠挂件，过期或停用后自动消失）
             </label>
             <div className="adm-form-actions">
               <button className="adm-btn" onClick={save} disabled={pending}>保存</button>

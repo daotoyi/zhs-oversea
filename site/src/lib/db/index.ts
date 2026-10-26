@@ -109,6 +109,12 @@ function migrate(database: Database): void {
   // 老库 coupons 表没有领取模式列：CREATE TABLE IF NOT EXISTS 不会补，
   // 必须显式 ADD COLUMN（默认 manual，存量券行为不变）。
   ensureColumn(database, 'coupons', 'acquisition_mode', "TEXT NOT NULL DEFAULT 'manual'");
+  // 老库 coupons 表没有「首页展示」开关：CREATE TABLE IF NOT EXISTS 不会补，
+  // 必须显式 ADD COLUMN（默认 0，存量券不自动上首页）。
+  ensureColumn(database, 'coupons', 'show_on_home', "INTEGER NOT NULL DEFAULT 0");
+  for (const c of ['addr_name', 'addr_phone', 'addr_country', 'addr_state', 'addr_city', 'addr_line1', 'addr_line2', 'addr_postal']) {
+    ensureColumn(database, 'users', c, 'TEXT');
+  }
 }
 
 function ensureColumn(database: Database, table: string, column: string, ddl: string): void {

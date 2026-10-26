@@ -129,7 +129,8 @@ export function CartClient({
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponFreeship, setCouponFreeship] = useState(false);
   const [couponAppliedCode, setCouponAppliedCode] = useState<string | null>(null);
-  const [provider, setProvider] = useState<'stripe' | 'paypal'>('stripe');
+  // 默认走 PayPal（真能收钱）；信用卡 / Stripe 演示入口已隐藏，待接入真实收单后再开放
+  const [provider, setProvider] = useState<'stripe' | 'paypal'>('paypal');
   const [cardOpen, setCardOpen] = useState(false);
   const sanitizeLines = useCart((st) => st.sanitizeLines);
   const markPending = useCart((st) => st.markPending);
@@ -432,9 +433,6 @@ export function CartClient({
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 13, color: 'var(--ash)', marginBottom: 8 }}>{s.paymentMethod}</div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button type="button" onClick={() => setProvider('stripe')} style={provider === 'stripe' ? payActiveStyle : payBaseStyle}>
-              信用卡 / Stripe
-            </button>
             <button type="button" onClick={() => setProvider('paypal')} style={provider === 'paypal' ? payActiveStyle : payBaseStyle}>
               PayPal
             </button>
@@ -451,10 +449,6 @@ export function CartClient({
           {busy ? s.opening : selectedCount === resolved.length ? s.checkout : s.checkoutSelected(selectedCount)}
         </button>
         <div className="pay-row" style={{ justifyContent: 'center', marginTop: 16 }}>
-          <span className="pay-badge">VISA</span>
-          <span className="pay-badge">MASTERCARD</span>
-          <span className="pay-badge">AMEX</span>
-          <span className="pay-badge">APPLE PAY</span>
           <span className="pay-badge">PAYPAL</span>
         </div>
       </aside>

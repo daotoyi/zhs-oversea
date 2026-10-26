@@ -11,7 +11,7 @@ import {
   touchLogin,
   updateUser,
 } from '@/lib/account/dao';
-import { awardSignup } from '@/lib/account/points';
+import { awardSignup, grantWelcomeCoupon } from '@/lib/account/points';
 import {
   consumeState,
   exchangeCode,
@@ -130,6 +130,7 @@ async function handle(
     });
     userId = created.id;
     awardSignup(userId);
+    grantWelcomeCoupon(userId, profile.email!);
   }
 
   const user = findUserById(userId);

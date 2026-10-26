@@ -2,7 +2,7 @@ import { initDb } from '@/lib/db/loader';
 import { bad, json, readJson, safeNext, setUserCookie } from '@/lib/account/api';
 import { createSession, normalizeEmail, passwordProblem, rateLimit, clientIp, sweepExpired } from '@/lib/account/auth';
 import { createUser, findUserByEmail, findUserById, linkIdentity, touchLogin, updateUser } from '@/lib/account/dao';
-import { awardSignup } from '@/lib/account/points';
+import { awardSignup, grantWelcomeCoupon } from '@/lib/account/points';
 
 export const runtime = 'nodejs';
 
@@ -50,6 +50,7 @@ export async function POST(req: Request) {
     });
     userId = user.id;
     awardSignup(userId);
+    grantWelcomeCoupon(userId, email);
   }
 
   touchLogin(userId);

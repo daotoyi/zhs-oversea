@@ -9,6 +9,7 @@ import {
   listFavorites,
   listIdentities,
   listUserOrders,
+  listUserCoupons,
   orderStats,
 } from '@/lib/account/dao';
 import { claimBirthdayGift, listLedger, nextTier, tierFor, REDEEM_OPTIONS } from '@/lib/account/points';
@@ -19,7 +20,9 @@ import { getNavStrings, getFooterStrings, getUi } from '@/lib/i18n';
 import { Nav } from '@/components/Nav';
 import { Footer } from '@/components/Footer';
 import { ProfileForm, PasswordForm } from '@/components/account/ProfileForm';
+import { AddressForm } from '@/components/account/AddressForm';
 import { RedeemPanel, LogoutButton, FavoriteRemove } from '@/components/account/RedeemPanel';
+import { CouponList, type CouponView } from '@/components/account/CouponList';
 import OrdersSearch from '@/components/account/OrdersSearch';
 
 export const dynamic = 'force-dynamic';
@@ -84,6 +87,45 @@ export default async function AccountPage() {
   const tierName = locale === 'en' ? tier.labelEn : tier.labelZh;
   const nextName = upcoming ? (locale === 'en' ? upcoming.labelEn : upcoming.labelZh) : null;
 
+  // ── 我的优惠券：以 coupon_claims 归属为准，预计算展示字段 ──
+  const couponRows = listUserCoupons(user.email);
+  const nowMs = Date.now();
+  const offLabel = (c: (typeof couponRows)[number]) => {
+    if (c.type === 'freeship') return labels.couponFreeShip;
+    if (c.type === 'percent') return locale === 'en' ? `${c.value}% off` : `减 ${c.value}%`;
+    return locale === 'en' ? `$${(c.value / 100).toFixed(0)} off` : `立减 $${(c.value / 100).toFixed(0)}`;
+  };
+  const couponViews: CouponView[] = couponRows.map((c) => {
+    const isWelcome = (c.created_by ?? '').startsWith('welcome:');
+    const title = isWelcome ? `${labels.couponWelcome} · ${offLabel(c)}` : offLabel(c);
+    const validityText =
+      c.ends_at == null ? labels.couponLongValid : `${labels.couponValidUntil} ${dateFmt(c.ends_at)}`;
+    let statusKey: CouponView['statusKey'];
+    let statusText: string;
+    if (c.used_count > 0) {
+      statusKey = 'used';
+      statusText = labels.couponStatusUsed;
+    } else if (c.status !== 'active' || (c.starts_at != null && nowMs < c.starts_at)) {
+      statusKey = 'notStarted';
+      statusText = labels.couponNotStarted;
+    } else if (c.ends_at != null && nowMs > c.ends_at) {
+      statusKey = 'expired';
+      statusText = labels.couponExpired;
+    } else {
+      statusKey = 'active';
+      statusText = labels.couponActive;
+    }
+    return { code: c.code, title, validityText, statusKey, statusText };
+  });
+  const welcomeReady = couponRows.find(
+    (c) =>
+      (c.created_by ?? '').startsWith('welcome:') &&
+      c.used_count === 0 &&
+      c.status === 'active' &&
+      (c.starts_at == null || nowMs >= c.starts_at) &&
+      (c.ends_at == null || nowMs <= c.ends_at)
+  );
+
   return (
     <>
       <Nav strings={navStrings} />
@@ -107,6 +149,13 @@ export default async function AccountPage() {
             <div className="acct-banner">
               {t('Happy birthday — 200 points and a 15% coupon are in your account.', '生日快乐——200 积分与 15% 生日券已存入账户。')}
               {gift.couponCode && <code>{gift.couponCode}</code>}
+            </div>
+          )}
+
+          {welcomeReady && (
+            <div className="acct-banner">
+              {t('Welcome — a free-shipping coupon is in your account, ready at checkout.', '新人礼——一张免运费券已存入账户，结账时可用。')}
+              <code>{welcomeReady.code}</code>
             </div>
           )}
 
@@ -191,6 +240,25 @@ export default async function AccountPage() {
 
               <section className="acct-card">
                 <header className="acct-card-head">
+                  <h2 className="serif">{labels.shippingTitle}</h2>
+                </header>
+                <AddressForm
+                  labels={labels}
+                  initial={{
+                    addrName: user.addr_name ?? '',
+                    addrPhone: user.addr_phone ?? '',
+                    addrCountry: user.addr_country ?? '',
+                    addrState: user.addr_state ?? '',
+                    addrCity: user.addr_city ?? '',
+                    addrLine1: user.addr_line1 ?? '',
+                    addrLine2: user.addr_line2 ?? '',
+                    addrPostal: user.addr_postal ?? '',
+                  }}
+                />
+              </section>
+
+              <section className="acct-card">
+                <header className="acct-card-head">
                   <h2 className="serif">{labels.birthdayTitle}</h2>
                 </header>
                 <p className="acct-note">{labels.birthdayLead}</p>
@@ -249,6 +317,13 @@ export default async function AccountPage() {
                     })}
                   </ul>
                 )}
+              </section>
+
+              <section className="acct-card">
+                <header className="acct-card-head">
+                  <h2 className="serif">{labels.couponsTitle}</h2>
+                </header>
+                <CouponList coupons={couponViews} labels={labels} />
               </section>
 
               <section className="acct-card">

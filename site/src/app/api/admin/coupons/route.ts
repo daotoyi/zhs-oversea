@@ -37,10 +37,14 @@ export async function POST(req: Request) {
       ends_at: formData.get('ends_at') ? new Date(String(formData.get('ends_at'))).getTime() : null,
       status: String(formData.get('status') ?? 'active'),
       acquisition_mode: String(formData.get('acquisition_mode') ?? 'manual'),
+      show_on_home: Number(formData.get('show_on_home') ?? 0) ? 1 : 0,
     };
   }
   const code = String(body.code ?? '').trim().toUpperCase();
   if (!code && body.action !== 'delete') return bad('券码必填');
+  // 快捷切换首页展示：仅传 code + show_on_home（不带 action）即可，复用 saveCoupon 的部分更新
+  const showHomeRaw = body.show_on_home;
+  const showHome = showHomeRaw === undefined ? undefined : (Number(showHomeRaw) ? 1 : 0);
   if (body.action === 'delete') {
     deleteCoupon(code);
     persistSoon();
@@ -58,6 +62,7 @@ export async function POST(req: Request) {
     ends_at: body.ends_at ? Number(body.ends_at) : null,
     status: String(body.status ?? 'active'),
     acquisition_mode: String(body.acquisition_mode ?? body.acquisitionMode ?? 'manual'),
+    show_on_home: showHome,
     created_by: auth.staff.username,
   });
   persistSoon();

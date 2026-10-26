@@ -11,6 +11,8 @@ import { getNavStrings, getFooterStrings, getUi, localizeProduct } from '@/lib/i
 import { UI_ZH } from '@/lib/i18n/zh-hans';
 import { toTraditional } from '@/lib/i18n/convert';
 import { categoryLabel } from '@/lib/categories';
+import { getHomeCoupons } from '@/lib/admin/dao';
+import HomeCouponFloat from '@/components/HomeCouponFloat';
 
 export default async function HomePage() {
   const { locale, t } = await getUi();
@@ -21,6 +23,20 @@ export default async function HomePage() {
   const acctLabels = accountLabels(locale);
   const favSlugs = await viewerFavoriteSlugs();
   const h = UI_ZH.home;
+
+  // 首页浮动优惠挂件数据：取「开启首页展示 + 有效期内的券」，按语种本地化文案
+  const L = (en: string, zh: string) =>
+    locale === 'en' ? en : locale === 'zh-Hant' ? toTraditional(zh) : zh;
+  const homeCoupons = getHomeCoupons().map((c) => {
+    let desc = '';
+    if (c.type === 'freeship') desc = L('Free shipping on this order', '本单免运费');
+    else if (c.type === 'percent') desc = L(`${c.value}% off your order`, `全单 ${c.value}% 折扣`);
+    else desc = L(`$${(c.value / 100).toFixed(2)} off`, `立减 $${(c.value / 100).toFixed(2)}`);
+    const expireLabel = c.ends_at
+      ? L(`Valid until ${new Date(c.ends_at).toLocaleDateString()}`, `有效期至 ${new Date(c.ends_at).toLocaleDateString()}`)
+      : L('No expiry · always on', '长期有效');
+    return { code: c.code, desc, expireLabel };
+  });
 
   // 品类标签按语种（统一走 lib/categories.ts）
   const catLabel = (cat: string) => categoryLabel(cat, locale);
@@ -362,6 +378,9 @@ export default async function HomePage() {
       </section>
 
       <Footer strings={footerStrings} />
+
+      {/* ── 首页浮动优惠挂件（仅在首页；过期/停用后自动消失） ── */}
+      <HomeCouponFloat coupons={homeCoupons} locale={locale} />
     </>
   );
 }

@@ -22,6 +22,14 @@ export type UserRow = {
   marketing_opt_in: number;
   email_verified: number;
   birthday_gift_year: number | null;
+  addr_name: string | null;
+  addr_phone: string | null;
+  addr_country: string | null;
+  addr_state: string | null;
+  addr_city: string | null;
+  addr_line1: string | null;
+  addr_line2: string | null;
+  addr_postal: string | null;
   created_at: number;
   last_login_at: number | null;
 };
@@ -131,6 +139,14 @@ export function updateUser(
     password?: string;
     avatarUrl?: string | null;
     emailVerified?: boolean;
+    addrName?: string | null;
+    addrPhone?: string | null;
+    addrCountry?: string | null;
+    addrState?: string | null;
+    addrCity?: string | null;
+    addrLine1?: string | null;
+    addrLine2?: string | null;
+    addrPostal?: string | null;
   }
 ): void {
   const fields: string[] = [];
@@ -146,6 +162,15 @@ export function updateUser(
   }
   if (patch.avatarUrl !== undefined) { fields.push('avatar_url = ?'); vals.push(patch.avatarUrl); }
   if (patch.emailVerified !== undefined) { fields.push('email_verified = ?'); vals.push(patch.emailVerified ? 1 : 0); }
+  const addrMap: [keyof typeof patch, string][] = [
+    ['addrName', 'addr_name'], ['addrPhone', 'addr_phone'], ['addrCountry', 'addr_country'],
+    ['addrState', 'addr_state'], ['addrCity', 'addr_city'], ['addrLine1', 'addr_line1'],
+    ['addrLine2', 'addr_line2'], ['addrPostal', 'addr_postal'],
+  ];
+  for (const [key, col] of addrMap) {
+    const v = patch[key];
+    if (v !== undefined) { fields.push(`${col} = ?`); vals.push(v); }
+  }
   if (!fields.length) return;
   vals.push(userId);
   run(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, vals);
@@ -320,6 +345,37 @@ export function listRefundRequests(userId: string): RefundRequest[] {
   return all<RefundRequest>(
     'SELECT * FROM refund_requests WHERE user_id = ? ORDER BY created_at DESC',
     [userId]
+  );
+}
+
+/* ── 用户的优惠券（以 coupon_claims 归属记录为准）── */
+
+export type UserCoupon = {
+  code: string;
+  type: string;
+  value: number;
+  min_subtotal: number;
+  starts_at: number | null;
+  ends_at: number | null;
+  status: string;
+  used_count: number;
+  created_by: string | null;
+  claimed_at: number;
+};
+
+/**
+ * 该邮箱持有的全部优惠券（新人免运费券 / 生日券 / 积分兑换券都通过 coupon_claims 归属）。
+ * 按领取时间倒序。券是否可用由调用方结合 used_count / 有效期自行判定。
+ */
+export function listUserCoupons(email: string): UserCoupon[] {
+  return all<UserCoupon>(
+    `SELECT c.code, c.type, c.value, c.min_subtotal, c.starts_at, c.ends_at, c.status,
+            c.used_count, c.created_by, cc.created_at AS claimed_at
+     FROM coupon_claims cc
+     JOIN coupons c ON c.code = cc.code
+     WHERE cc.email = ?
+     ORDER BY cc.created_at DESC`,
+    [email.trim().toLowerCase()]
   );
 }
 

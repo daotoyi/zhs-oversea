@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCart } from '@/lib/cart';
 import { formatUsd } from '@/lib/shipping';
 import type { LocalizedProduct } from '@/lib/i18n';
@@ -12,6 +13,7 @@ export function AddToCart({
   product: LocalizedProduct;
   strings: {
     addToCart: string;
+    buyNow: string;
     soldOut: string;
     shipHintLight: string;
     shipHintHeavy: string;
@@ -20,7 +22,9 @@ export function AddToCart({
 }) {
   const [variantId, setVariantId] = useState(product.variants[0]?.id ?? '');
   const [quantity, setQuantity] = useState(1);
+  const [buying, setBuying] = useState(false);
   const addLine = useCart((s) => s.addLine);
+  const router = useRouter();
 
   const variant = product.variants.find((v: { id: string }) => v.id === variantId) ?? product.variants[0];
   const soldOut = variant?.stock === 0;
@@ -57,10 +61,23 @@ export function AddToCart({
         <button
           type="button"
           className="btn btn-solid pdp-add"
-          disabled={soldOut}
+          disabled={soldOut || buying}
           onClick={() => addLine({ slug: product.slug, variantId: variant.id, quantity })}
         >
           {soldOut ? strings.soldOut : `${strings.addToCart} — ${formatUsd(variant.priceUsd * quantity)}`}
+        </button>
+        <button
+          type="button"
+          className="btn btn-outline pdp-buy-now"
+          disabled={soldOut || buying}
+          onClick={() => {
+            // 立即购买：先把当前规格加进购物车（不弹抽屉），再直接跳结算界面
+            setBuying(true);
+            addLine({ slug: product.slug, variantId: variant.id, quantity }, { openDrawer: false });
+            router.push('/cart');
+          }}
+        >
+          {strings.buyNow}
         </button>
       </div>
 

@@ -1377,6 +1377,11 @@ button {
   flex: 1;
 }
 
+.pdp-buy-now {
+  flex: none;
+  white-space: nowrap;
+}
+
 .pdp-ship-hint {
   font-size: 12px;
   color: var(--ash);
@@ -3258,6 +3263,115 @@ html[lang^='zh'] .eyebrow {
   margin-bottom: 14px;
 }
 
+/* ── 我的优惠券 ── */
+.acct-coupons {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.acct-coupon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 15px;
+  border: 1px solid var(--rule);
+  background: #fbf8f1;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 左侧锯齿缺口，模拟票券质感 */
+.acct-coupon::before {
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  background: var(--porcelain);
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  transform: translateY(-50%);
+}
+
+.acct-coupon-main {
+  min-width: 0;
+}
+
+.acct-coupon-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 5px;
+}
+
+.acct-coupon-code {
+  display: inline-block;
+  font-family: var(--sans);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  background: #fff;
+  border: 1px dashed var(--ash);
+  border-radius: 4px;
+  margin-bottom: 5px;
+}
+
+.acct-coupon-validity {
+  font-size: 11.5px;
+  color: var(--ash);
+}
+
+.acct-coupon-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex: none;
+}
+
+.acct-coupon-badge {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.acct-coupon-badge-active {
+  background: #e7f1e8;
+  color: #2f6b3c;
+}
+
+.acct-coupon-badge-used,
+.acct-coupon-badge-expired,
+.acct-coupon-badge-notStarted {
+  background: #ece7df;
+  color: var(--ash);
+}
+
+.acct-coupon-copy {
+  font-size: 11.5px;
+  padding: 4px 12px;
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.acct-coupon-copy:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
 .acct-form-inline {
   gap: 14px;
 }
@@ -4190,4 +4304,131 @@ html[lang^='zh'] .eyebrow {
   .adm-mail-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ── 首页浮动优惠挂件 ── */
+.home-coupon-float {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 300px;
+  pointer-events: none;
+}
+.hcf-card {
+  position: relative;
+  pointer-events: auto;
+  background: var(--paper);
+  border: 1px solid var(--cinnabar);
+  border-radius: 12px;
+  box-shadow: 0 14px 36px rgba(40, 24, 16, 0.22);
+  padding: 16px 18px 16px;
+  animation: hcfIn 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.hcf-tag {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cinnabar);
+  font-weight: 600;
+}
+.hcf-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 5px 0 3px;
+  letter-spacing: 0.04em;
+}
+.hcf-desc {
+  font-size: 13.5px;
+  color: var(--ink);
+  opacity: 0.86;
+  line-height: 1.4;
+}
+.hcf-expire {
+  font-size: 11px;
+  color: #8a7d6b;
+  margin-top: 6px;
+}
+.hcf-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.hcf-copy,
+.hcf-go {
+  flex: 1;
+  text-align: center;
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.hcf-copy {
+  background: transparent;
+  border: 1px solid var(--cinnabar);
+  color: var(--cinnabar);
+}
+.hcf-copy:hover {
+  background: rgba(158, 59, 46, 0.08);
+}
+.hcf-go {
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: var(--paper);
+}
+.hcf-go:hover {
+  opacity: 0.88;
+}
+.hcf-close {
+  position: absolute;
+  top: 6px;
+  right: 9px;
+  border: none;
+  background: none;
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+  color: #9a8f7e;
+  padding: 2px 4px;
+}
+.hcf-close:hover {
+  color: var(--ink);
+}
+@keyframes hcfIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@media (max-width: 560px) {
+  .home-coupon-float {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    max-width: none;
+  }
+}
+
+/* ── 后台表单：首页展示复选框 ── */
+.adm-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink);
+  margin: 6px 0 4px;
+  line-height: 1.45;
+  cursor: pointer;
+}
+.adm-check input {
+  margin-top: 2px;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--cinnabar);
+  flex: none;
 }

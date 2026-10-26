@@ -68,6 +68,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   const addToCartStrings = {
     addToCart: t('Add to cart', UI_ZH.common.addToCart),
+    buyNow: t('Buy now', '立即购买'),
     soldOut: t('Currently unavailable', UI_ZH.common.soldOut),
     shipHintLight: t('Ships from Beijing — 7–12 business days to the US, insured.', h.shipHintLight),
     shipHintHeavy: t('Heavier piece — 8–14 business days to the US, insured.', h.shipHintHeavy),

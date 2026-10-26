@@ -21,7 +21,7 @@ type CartState = {
    */
   pendingKeys: string[];
   drawerOpen: boolean;
-  addLine: (line: CartLine) => void;
+  addLine: (line: CartLine, opts?: { openDrawer?: boolean }) => void;
   removeLine: (slug: string, variantId: string) => void;
   setQuantity: (slug: string, variantId: string, quantity: number) => void;
   clear: () => void;
@@ -43,8 +43,10 @@ export const useCart = create<CartState>()(
       lines: [],
       pendingKeys: [],
       drawerOpen: false,
-      addLine: (line) =>
+      addLine: (line, opts) =>
         set((state) => {
+          // 默认加购后弹出抽屉；「立即购买」等场景传 openDrawer:false 直接跳结算
+          const open = opts?.openDrawer !== false;
           const existing = state.lines.find((l) => l.slug === line.slug && l.variantId === line.variantId);
           if (existing) {
             return {
@@ -53,10 +55,10 @@ export const useCart = create<CartState>()(
                   ? { ...l, quantity: Math.min(l.quantity + line.quantity, 20) }
                   : l
               ),
-              drawerOpen: true,
+              drawerOpen: open ? true : state.drawerOpen,
             };
           }
-          return { lines: [...state.lines, line], drawerOpen: true };
+          return { lines: [...state.lines, line], drawerOpen: open ? true : state.drawerOpen };
         }),
       removeLine: (slug, variantId) =>
         set((state) => ({
