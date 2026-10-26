@@ -136,6 +136,7 @@ export async function localizeHexagram(hex: Hexagram, slug: string): Promise<Hex
 
 export async function localizePost(post: JournalPost, slug: string): Promise<JournalPost> {
   const locale = await getLocale();
+  if (locale === 'en') return post; // 英文以基础数据（英文）为准
   const z = POSTS_ZH[slug];
   if (!z) return post;
   return {
