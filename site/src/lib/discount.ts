@@ -5,7 +5,9 @@
  * 1. 节日折扣（sale_events）按商品/品类逐行生效，直接降低该行单价。
  * 2. 优惠券（coupons）在「节日折后小计」基础上，再行整单减免（百分比 / 固定额）。
  * 3. 优惠券校验：active、在有效期内、未超 max_uses、达到最低消费。
- * 4. 任何 DB 异常都回落为「无折扣」，绝不阻断结账。
+ * 4. 免运费券（type='freeship'）不动商品金额，只把结果标记为 freeship=true，
+ *    运费归零由结账层（lib/checkout/core.ts）执行 —— 本函数不碰运费。
+ * 5. 任何 DB 异常都回落为「无折扣」，绝不阻断结账。
  */
 
 import { initDb } from '@/lib/db/loader';
@@ -25,6 +27,8 @@ export type DiscountResult = {
   couponDiscount: number;
   totalDiscount: number;
   couponCode: string | null;
+  /** 该券为「免运费」型：商品金额不减，运费归零（由 checkout/core 落实） */
+  freeship: boolean;
   /** 每行最终单价（已含全部折扣，>=0） */
   lineUnitAmounts: number[];
   error?: string;
@@ -55,6 +59,7 @@ export async function computeDiscount(
 
   let couponDiscount = 0;
   let appliedCoupon: string | null = null;
+  let freeship = false;
 
   const code = couponCode?.trim();
   if (code) {
@@ -67,10 +72,15 @@ export async function computeDiscount(
     if (postSale < (c.min_subtotal ?? 0)) {
       return fail(`需满 $${((c.min_subtotal ?? 0) / 100).toFixed(0)} 可用`);
     }
-    couponDiscount =
-      c.type === 'percent'
-        ? Math.round((postSale * c.value) / 100)
-        : Math.min(c.value, postSale);
+    // 免运费券：不碰商品金额，只把运费归零（下单时由 checkout/core 落实）
+    if (c.type === 'freeship') {
+      freeship = true;
+    } else {
+      couponDiscount =
+        c.type === 'percent'
+          ? Math.round((postSale * c.value) / 100)
+          : Math.min(c.value, postSale);
+    }
     appliedCoupon = c.code;
   }
 
@@ -97,6 +107,7 @@ export async function computeDiscount(
     couponDiscount,
     totalDiscount,
     couponCode: appliedCoupon,
+    freeship,
     lineUnitAmounts,
   };
 
@@ -107,6 +118,7 @@ export async function computeDiscount(
       couponDiscount: 0,
       totalDiscount: 0,
       couponCode: null,
+      freeship: false,
       lineUnitAmounts: lines.map((l) => l.variantPriceUsd),
       error: msg,
     };

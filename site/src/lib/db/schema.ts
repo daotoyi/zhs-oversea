@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS coupons (
   starts_at INTEGER,
   ends_at INTEGER,
   status TEXT NOT NULL DEFAULT 'active',
+  acquisition_mode TEXT NOT NULL DEFAULT 'manual',  -- manual: 手动发放; auto: 公开领取
   created_by TEXT,
   created_at INTEGER NOT NULL
 );
@@ -93,6 +94,18 @@ CREATE TABLE IF NOT EXISTS coupon_uses (
   order_id TEXT NOT NULL,
   amount INTEGER NOT NULL,
   created_at INTEGER NOT NULL
+);
+
+/* 领券记录（仅 acquisition_mode='auto' 的券）
+   与 coupon_uses 分开：领取 ≠ 核销。领取只说明「有人把这个码拿走了」，
+   真正扣减 max_uses 仍在结账核销时发生。
+   已登录访客按 (code,email) 去重；未登录不落库，避免匿名刷记录。 */
+CREATE TABLE IF NOT EXISTS coupon_claims (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL,
+  email TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  UNIQUE(code, email)
 );
 
 CREATE TABLE IF NOT EXISTS sale_events (

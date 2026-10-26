@@ -96,6 +96,9 @@ function migrate(database: Database): void {
   ensureColumn(database, 'orders', 'provider_ref', 'TEXT');
   ensureColumn(database, 'orders', 'carrier', 'TEXT');
   ensureColumn(database, 'products', 'collection', 'TEXT');
+  // 老库 coupons 表没有领取模式列：CREATE TABLE IF NOT EXISTS 不会补，
+  // 必须显式 ADD COLUMN（默认 manual，存量券行为不变）。
+  ensureColumn(database, 'coupons', 'acquisition_mode', "TEXT NOT NULL DEFAULT 'manual'");
 }
 
 function ensureColumn(database: Database, table: string, column: string, ddl: string): void {

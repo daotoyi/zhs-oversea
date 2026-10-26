@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useState, useEffect, type CSSProperties } from 'react';
 import { useCart } from '@/lib/cart';
 import { getProduct } from '@/lib/products';
-import { formatUsd } from '@/lib/shipping';
+import { formatUsd, shippingPriceCents } from '@/lib/shipping';
+import { FREE_SHIPPING_THRESHOLD_USD } from '@/lib/types';
 import type { Locale } from '@/lib/i18n/config';
 import type { StoreProductLite } from '@/lib/storefront';
 import { toTraditional } from '@/lib/i18n/convert';
@@ -31,6 +32,7 @@ type S = {
   apply: string;
   couponPlaceholder: string;
   couponApplied: (amount: string) => string;
+  couponFreeShip: string;
   couponInvalid: string;
   paymentMethod: string;
   pruned: (count: number) => string;
@@ -55,6 +57,7 @@ const STRINGS: Record<Locale, S> = {
     apply: 'Apply',
     couponPlaceholder: 'Enter coupon code',
     couponApplied: (a) => `Coupon applied — you save ${a}.`,
+    couponFreeShip: 'Free-shipping coupon applied — shipping is on us.',
     couponInvalid: 'This code is invalid or not applicable.',
     paymentMethod: 'Payment method',
     pruned: (n) =>
@@ -78,6 +81,7 @@ const STRINGS: Record<Locale, S> = {
     apply: '应用',
     couponPlaceholder: '输入优惠码',
     couponApplied: (a: string) => `已应用优惠券，立减 ${a}。`,
+    couponFreeShip: '已应用免运费券，本单运费全免。',
     couponInvalid: '优惠码无效或不可用。',
     paymentMethod: '支付方式',
     pruned: (n: number) => `已自动移除 ${n} 件失效商品（已下架或链接过期）。`,
@@ -108,6 +112,7 @@ export function CartClient({
   const [coupon, setCoupon] = useState('');
   const [couponMsg, setCouponMsg] = useState<string | null>(null);
   const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponFreeship, setCouponFreeship] = useState(false);
   const [couponAppliedCode, setCouponAppliedCode] = useState<string | null>(null);
   const [provider, setProvider] = useState<'stripe' | 'paypal'>('stripe');
   const [cardOpen, setCardOpen] = useState(false);
@@ -172,12 +177,15 @@ export function CartClient({
 
   const subtotal = resolved.reduce((sum, r) => sum + r.variant.priceUsd * r.line.quantity, 0);
   const totalWeight = resolved.reduce((sum, r) => sum + r.variant.weightGrams * r.line.quantity, 0);
-  const shipping = subtotal >= 6000 ? 0 : 1200;
-  const remaining = Math.max(0, 6000 - subtotal);
+  // 免运费券把运费清零（与服务端 lib/checkout/core.ts 同规则、同一算法）
+  const shippingBase = shippingPriceCents(subtotal, totalWeight);
+  const shipping = couponFreeship ? 0 : shippingBase;
+  const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD_USD - subtotal);
 
   async function applyCoupon() {
     setCouponMsg(null);
     setCouponDiscount(0);
+    setCouponFreeship(false);
     setCouponAppliedCode(null);
     const code = coupon.trim();
     if (!code) return;
@@ -195,9 +203,11 @@ export function CartClient({
         setCouponMsg(s.couponInvalid);
         return;
       }
+      const isFreeship = Boolean(data.freeship);
       setCouponDiscount(data.discountUsd ?? 0);
+      setCouponFreeship(isFreeship);
       setCouponAppliedCode(data.code ?? code);
-      setCouponMsg(s.couponApplied(formatUsd(data.discountUsd ?? 0)));
+      setCouponMsg(isFreeship ? s.couponFreeShip : s.couponApplied(formatUsd(data.discountUsd ?? 0)));
     } catch {
       setCouponMsg(s.couponInvalid);
     }
@@ -321,10 +331,10 @@ export function CartClient({
         </dl>
         <div className="cart-note">{s.duty}</div>
 
-        {remaining > 0 && (
+        {remaining > 0 && !couponFreeship && (
           <div className="cart-progress">
             <div className="cart-progress-bar">
-              <span style={{ width: `${Math.min(100, (subtotal / 6000) * 100)}%` }} />
+              <span style={{ width: `${Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD_USD) * 100)}%` }} />
             </div>
             <p>{s.away(formatUsd(remaining))}</p>
           </div>

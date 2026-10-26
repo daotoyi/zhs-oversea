@@ -47,6 +47,7 @@ export async function POST(request: Request) {
       discountUsd: result.totalDiscount,
       saleDiscountUsd: result.saleDiscount,
       couponDiscountUsd: result.couponDiscount,
+      freeship: result.freeship,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Validation failed';

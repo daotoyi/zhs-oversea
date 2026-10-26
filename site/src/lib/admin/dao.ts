@@ -452,12 +452,17 @@ export type Coupon = {
   starts_at: number | null;
   ends_at: number | null;
   status: string;
+  acquisition_mode: string;
+  claim_count?: number;
   created_by: string | null;
   created_at: number;
 };
 
 export function listCoupons(): Coupon[] {
-  return all<Coupon>('SELECT * FROM coupons ORDER BY created_at DESC');
+  return all<Coupon>(
+    `SELECT c.*, (SELECT COUNT(*) FROM coupon_claims cc WHERE cc.code = c.code) AS claim_count
+       FROM coupons c ORDER BY c.created_at DESC`
+  );
 }
 
 export function findCoupon(code: string): Coupon | null {
@@ -469,7 +474,7 @@ export function saveCoupon(input: Partial<Coupon> & { code: string }): Coupon {
   if (existing) {
     const fields: string[] = [];
     const vals: unknown[] = [];
-    for (const k of ['type', 'value', 'min_subtotal', 'max_uses', 'per_customer_limit', 'starts_at', 'ends_at', 'status'] as const) {
+    for (const k of ['type', 'value', 'min_subtotal', 'max_uses', 'per_customer_limit', 'starts_at', 'ends_at', 'status', 'acquisition_mode'] as const) {
       if (input[k] !== undefined) { fields.push(`${k} = ?`); vals.push(input[k]); }
     }
     if (fields.length) {
@@ -480,15 +485,30 @@ export function saveCoupon(input: Partial<Coupon> & { code: string }): Coupon {
   }
   run(
     `INSERT INTO coupons (code, type, value, min_subtotal, max_uses, used_count, per_customer_limit,
-      starts_at, ends_at, status, created_by, created_at)
-     VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)`,
+      starts_at, ends_at, status, acquisition_mode, created_by, created_at)
+     VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)`,
     [
       input.code.toUpperCase(), input.type ?? 'percent', input.value ?? 0, input.min_subtotal ?? 0,
       input.max_uses ?? 0, input.per_customer_limit ?? 0, input.starts_at ?? null, input.ends_at ?? null,
-      input.status ?? 'active', input.created_by ?? null, now(),
+      input.status ?? 'active', input.acquisition_mode ?? 'manual', input.created_by ?? null, now(),
     ]
   );
   return findCoupon(input.code)!;
+}
+
+/** 识别免运费券：type='freeship'，不动商品金额，只把运费归零 */
+export function isFreeshipCoupon(coupon: Pick<Coupon, 'type'>): boolean {
+  return coupon.type === 'freeship';
+}
+
+/** 记一笔领券（已登录访客，同一人同券只记一次）。返回是否新增。 */
+export function recordCouponClaim(code: string, email: string): boolean {
+  const before = get<{ n: number }>('SELECT COUNT(*) AS n FROM coupon_claims WHERE code = ?', [code.toUpperCase()]);
+  run('INSERT OR IGNORE INTO coupon_claims (code, email, created_at) VALUES (?, ?, ?)', [
+    code.toUpperCase(), email.toLowerCase(), now(),
+  ]);
+  const after = get<{ n: number }>('SELECT COUNT(*) AS n FROM coupon_claims WHERE code = ?', [code.toUpperCase()]);
+  return (after?.n ?? 0) > (before?.n ?? 0);
 }
 
 export function deleteCoupon(code: string): void {

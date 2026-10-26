@@ -100,6 +100,11 @@ export async function resolveCart(
     }))
   );
 
+  // 免运费券把运费归零（商品金额不变），免运门槛仍按原价判定
+  const freeByCoupon = disc.freeship;
+  const shippingUsd = freeByCoupon ? 0 : shipping.priceUsd;
+  const shippingFree = shipping.free || freeByCoupon;
+
   const lines: ResolvedCartLine[] = resolved.map(({ product, variant, quantity }, i) => ({
     slug: product.slug,
     variantId: variant.id,
@@ -118,7 +123,7 @@ export async function resolveCart(
   }));
 
   const subtotalUsd = lines.reduce((s, l) => s + l.unitAmountUsd * l.quantity, 0);
-  const totalUsd = subtotalUsd + shipping.priceUsd;
+  const totalUsd = subtotalUsd + shippingUsd;
 
   return {
     lines,
@@ -127,8 +132,8 @@ export async function resolveCart(
     saleDiscountUsd: disc.saleDiscount,
     couponDiscountUsd: disc.couponDiscount,
     couponCode: disc.couponCode ?? null,
-    shippingUsd: shipping.priceUsd,
-    shippingFree: shipping.free,
+    shippingUsd,
+    shippingFree,
     shippingRateId: shipping.rateId,
     shippingLabel: shipping.label,
     shippingMinDays: shipping.minDays,

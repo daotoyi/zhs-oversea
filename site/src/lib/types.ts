@@ -105,11 +105,18 @@ export type ShippingRate = {
   maxDays: number;
 };
 
-export const FREE_SHIPPING_THRESHOLD_USD = 60;
-export const FLAT_SHIPPING_USD = 12;
+/**
+ * 运费规则（单位：**分**，与商品 priceUsd 一致；显示时统一走 formatUsd）
+ *
+ * ⚠ 历史坑：这里曾写成 60 / 12（美元字面值），而商品价与 Stripe/PayPal 金额
+ * 全是分 —— 结果门槛变成「满 $0.60 免运」、运费变成 $0.12，等于全场免运。
+ * 改动前请确认调用方（lib/checkout/core.ts → Stripe fixed_amount / PayPal value）按分取值。
+ */
+export const FREE_SHIPPING_THRESHOLD_USD = 6000; // $60
+export const FLAT_SHIPPING_USD = 1200; // $12
 
 export const US_SHIPPING_RATES: ShippingRate[] = [
-  { id: 'light', label: 'Light · 7–12 business days', maxWeightGrams: 500, priceUsd: 12, minDays: 7, maxDays: 12 },
-  { id: 'standard', label: 'Standard · 8–14 business days', maxWeightGrams: 2000, priceUsd: 18, minDays: 8, maxDays: 14 },
-  { id: 'heavy', label: 'Fragile · 10–18 business days', maxWeightGrams: 8000, priceUsd: 28, minDays: 10, maxDays: 18 },
+  { id: 'light', label: 'Light · 7–12 business days', maxWeightGrams: 500, priceUsd: 1200, minDays: 7, maxDays: 12 },
+  { id: 'standard', label: 'Standard · 8–14 business days', maxWeightGrams: 2000, priceUsd: 1800, minDays: 8, maxDays: 14 },
+  { id: 'heavy', label: 'Fragile · 10–18 business days', maxWeightGrams: 8000, priceUsd: 2800, minDays: 10, maxDays: 18 },
 ];
