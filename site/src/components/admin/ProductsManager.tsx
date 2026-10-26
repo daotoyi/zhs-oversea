@@ -35,6 +35,9 @@ export default function ProductsManager({ initial, lang = 'en' }: { initial: Pro
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState<{ t: 'ok' | 'err'; m: string } | null>(null);
+  // 表头下拉筛选：'' 表示全部
+  const [catFilter, setCatFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   // 品类名跟随全站语言（NEXT_LOCIE）：要么全英文、要么全中文，不混排
   const locale: Locale = lang === 'zh-Hans' || lang === 'zh-Hant' ? lang : 'en';
@@ -142,26 +145,49 @@ export default function ProductsManager({ initial, lang = 'en' }: { initial: Pro
 
   const closeForm = () => { setEditing(null); setCreating(false); };
 
+  // 表头筛选后的列表
+  const filtered = initial.filter(
+    (p) => (catFilter === '' || p.category === catFilter) && (statusFilter === '' || p.status === statusFilter)
+  );
+
   return (
     <>
       <div className="adm-filters">
-        <span style={{ fontSize: 12.5, color: 'var(--ash)' }}>{initial.length} 个 SKU</span>
+        <span style={{ fontSize: 12.5, color: 'var(--ash)' }}>
+          {catFilter || statusFilter ? `${filtered.length} / ${initial.length} 个 SKU` : `${initial.length} 个 SKU`}
+        </span>
         <button className="adm-btn" onClick={openCreate} disabled={pending}>＋ 新增商品</button>
         {msg && <span style={{ fontSize: 12.5, color: msg.t === 'ok' ? '#4a5a44' : 'var(--cinnabar)' }}>{msg.m}</span>}
       </div>
 
       <div className="adm-card">
         <table className="adm-table">
-          <thead><tr><th>合集</th><th>标题</th><th>品类</th><th className="num">价格</th><th className="num">库存</th><th>状态</th><th className="actions">操作</th></tr></thead>
+          <thead>
+            <tr>
+              <th>
+                <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)} style={{ fontSize: 11.5, padding: '3px 6px', maxWidth: 130 }}>
+                  <option value="">品类：全部</option>
+                  {catOpts.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </select>
+              </th>
+              <th>标题</th>
+              <th className="num">价格</th>
+              <th className="num">库存</th>
+              <th>
+                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ fontSize: 11.5, padding: '3px 6px' }}>
+                  <option value="">状态：全部</option>
+                  {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </th>
+              <th className="actions">操作</th>
+            </tr>
+          </thead>
           <tbody>
-            {initial.length === 0 && <tr><td colSpan={7}><div className="adm-empty">暂无商品</div></td></tr>}
-            {initial.map((p) => (
+            {filtered.length === 0 && <tr><td colSpan={6}><div className="adm-empty">暂无商品</div></td></tr>}
+            {filtered.map((p) => (
               <tr key={p.slug}>
-                <td style={{ whiteSpace: 'nowrap' }}>
-                  {p.collection ? (locale === 'zh-Hant' ? toTraditional(p.collection) : p.collection) : '—'}
-                </td>
+                <td style={{ whiteSpace: 'nowrap' }}>{categoryLabel(p.category, locale)}</td>
                 <td>{(() => { const t = displayTitle(p); return <><div>{t.main}</div><div style={{ fontSize: 11, color: 'var(--ash)' }}>{t.sub}</div></>; })()}</td>
-                <td>{categoryLabel(p.category, locale)}</td>
                 <td className="num">{usd(p.price_usd)}</td>
                 <td className="num">{p.stock}</td>
                 <td>
