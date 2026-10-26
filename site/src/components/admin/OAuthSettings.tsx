@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/admin/client';
 import SecretInput from './SecretInput';
+import AdminFold from './AdminFold';
 
 type Initial = {
   googleClientId: string;
@@ -143,15 +144,17 @@ export default function OAuthSettings({ initial }: { initial: Initial }) {
               autoComplete="off"
             />
           </label>
-<label className="adm-oauth-field">
-              <span>Client Secret {initial.googleSecretSet && <em>(已配置 ····{initial.googleSecretTail})</em>}</span>
-              <SecretInput
-                value={gSecret}
-                onChange={(e) => setGSecret(e.target.value)}
-                placeholder={initial.googleSecretSet ? '留空 = 不修改' : 'GOCSPX-…'}
-                autoComplete="off"
-              />
-            </label>
+          <label className="adm-oauth-field">
+            <span>Client Secret {initial.googleSecretSet && <em>(已配置 ····{initial.googleSecretTail})</em>}</span>
+            <SecretInput
+              value={gSecret}
+              onChange={(e) => setGSecret(e.target.value)}
+              onRevealed={setGSecret}
+              revealField="google_client_secret"
+              placeholder={initial.googleSecretSet ? '留空 = 不修改 · 点眼睛可看已保存的' : 'GOCSPX-…'}
+              autoComplete="off"
+            />
+          </label>
 
           <div className="adm-oauth-foot">
             <button className="btn btn-solid" type="button" disabled={busy === 'google'} onClick={saveGoogle}>
@@ -204,7 +207,9 @@ export default function OAuthSettings({ initial }: { initial: Initial }) {
               rows={5}
               value={aP8}
               onChange={(e) => setAP8(e.target.value)}
-              placeholder={initial.appleKeySet ? '留空 = 不修改' : '-----BEGIN PRIVATE KEY-----\n…\n-----END PRIVATE KEY-----'}
+              onRevealed={setAP8}
+              revealField="apple_private_key"
+              placeholder={initial.appleKeySet ? '留空 = 不修改 · 点眼睛可看已保存的' : '-----BEGIN PRIVATE KEY-----\n…\n-----END PRIVATE KEY-----'}
               spellCheck={false}
             />
           </label>
@@ -218,36 +223,37 @@ export default function OAuthSettings({ initial }: { initial: Initial }) {
             </button>
           </div>
 
-          <hr className="rule" style={{ margin: '18px 0 14px' }} />
-
-          <p className="adm-oauth-hint">
-            Apple 要求先验证域名归属。把 Apple 给的<strong>校验文件内容</strong>粘到下面，我们会立刻发布到{' '}
-            <code>/.well-known/apple-developer-domain-association.txt</code>，然后你在 Apple 后台点 Verify 即可。
-          </p>
-          <label className="adm-oauth-field">
-            <span>域名校验文件内容</span>
-            <textarea
-              value={assoc}
-              onChange={(e) => setAssoc(e.target.value)}
-              placeholder="粘贴 apple-developer-domain-association.txt 的全文"
-              spellCheck={false}
-            />
-          </label>
-          <div className="adm-oauth-foot">
-            <button className="btn btn-outline" type="button" disabled={busy === 'assoc'} onClick={saveAssoc}>
-              {busy === 'assoc' ? '发布中…' : '发布校验文件'}
-            </button>
-            <a className="acct-link" href="/.well-known/apple-developer-domain-association.txt" target="_blank" rel="noreferrer">
-              查看已发布内容 →
-            </a>
-          </div>
+          <AdminFold
+            title="域名归属校验文件"
+            hint={assoc ? '已发布 · 点开可改' : 'Apple 要求先验证域名'}
+          >
+            <p className="adm-oauth-hint">
+              Apple 要求先验证域名归属。把 Apple 给的<strong>校验文件内容</strong>粘到下面，我们会立刻发布到{' '}
+              <code>/.well-known/apple-developer-domain-association.txt</code>，然后你在 Apple 后台点 Verify 即可。
+            </p>
+            <label className="adm-oauth-field">
+              <span>域名校验文件内容</span>
+              <textarea
+                value={assoc}
+                onChange={(e) => setAssoc(e.target.value)}
+                placeholder="粘贴 apple-developer-domain-association.txt 的全文"
+                spellCheck={false}
+              />
+            </label>
+            <div className="adm-oauth-foot">
+              <button className="btn btn-outline" type="button" disabled={busy === 'assoc'} onClick={saveAssoc}>
+                {busy === 'assoc' ? '发布中…' : '发布校验文件'}
+              </button>
+              <a className="acct-link" href="/.well-known/apple-developer-domain-association.txt" target="_blank" rel="noreferrer">
+                查看已发布内容 →
+              </a>
+            </div>
+          </AdminFold>
         </section>
       </div>
 
-      <hr className="rule" style={{ margin: '26px 0 20px' }} />
-
-      <h2 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>怎么拿到这些凭据</h2>
-      <div className="adm-oauth-grid">
+      <AdminFold title="怎么拿到这些凭据" hint="Google 免费 · Apple 需付费开发者账号">
+        <div className="adm-oauth-grid">
         <section>
           <p className="adm-oauth-hint" style={{ marginBottom: 8 }}>
             <strong>Google</strong>（免费，10 分钟）
@@ -269,7 +275,7 @@ export default function OAuthSettings({ initial }: { initial: Initial }) {
             <li>
               「已获授权的重定向 URI」填 <code>{GOOGLE_URI}</code>
             </li>
-            <li>把拿到的 Client ID 与 Client Secret 填到左边保存即可</li>
+            <li>把拿到的 Client ID 与 Client Secret 填到上面保存即可</li>
           </ol>
           <p className="adm-steps-note">
             同意屏幕若长期留 Testing，只能白名单里的邮箱登录；上线前务必 Publish。Google 不要求域名验证。
@@ -295,20 +301,21 @@ export default function OAuthSettings({ initial }: { initial: Initial }) {
               Primary Domain 填 <code>zhenhesheng.com</code>；Return URL 填 <code>{APPLE_URI}</code>
             </li>
             <li>
-              页面会给出一个校验文件下载 → 打开它，全文粘到左边「域名校验文件内容」→ 发布 → 回 Apple 点 Verify
+              页面会给出一个校验文件下载 → 打开它，全文粘到上面「域名归属校验文件」→ 发布 → 回 Apple 点 Verify
             </li>
             <li>
               Keys → 右上 + → 勾 Sign In with Apple → 下载 <code>.p8</code>（<strong>只能下载一次</strong>）
               → 记下 Key ID 与 Team ID
             </li>
-            <li>把 Services ID / Team ID / Key ID / .p8 全文填到左边保存</li>
+            <li>把 Services ID / Team ID / Key ID / .p8 全文填到上面保存</li>
           </ol>
           <p className="adm-steps-note">
             Apple 两个坑：① 用 Services ID，不是 App ID；② .p8 只能下载一次，丢了只能重建 Key。
             另外 Apple 只在首次授权时把姓名给你，之后拿不到。
           </p>
         </section>
-      </div>
+        </div>
+      </AdminFold>
     </>
   );
 }

@@ -2565,6 +2565,68 @@ html[lang^='zh'] .eyebrow {
   line-height: 1.6;
 }
 
+/* ── 可折叠指引（AdminFold）── */
+.adm-fold {
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  background: #fbfaf7;
+  margin: 10px 0;
+}
+
+.adm-fold + .adm-fold {
+  margin-top: 8px;
+}
+
+.adm-fold-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.adm-fold-head::-webkit-details-marker {
+  display: none;
+}
+
+.adm-fold-head:hover {
+  background: #f5f2ea;
+}
+
+.adm-fold-arrow {
+  display: inline-block;
+  font-size: 10px;
+  color: var(--ash);
+  transition: transform 0.15s ease;
+}
+
+.adm-fold[open] > .adm-fold-head .adm-fold-arrow {
+  transform: rotate(90deg);
+}
+
+.adm-fold-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.adm-fold-hint {
+  font-size: 11px;
+  color: #a8a292;
+}
+
+.adm-fold-body {
+  padding: 2px 14px 14px 30px;
+  border-top: 1px solid var(--rule);
+}
+
+.adm-fold-body > .adm-steps:first-child,
+.adm-fold-body > p:first-child {
+  margin-top: 10px;
+}
+
 /* ── 后台弹窗（编辑/新增商品等）── */
 .adm-modal-overlay {
   position: fixed;

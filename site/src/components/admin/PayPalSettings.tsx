@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/admin/client';
 import SecretInput from './SecretInput';
+import AdminFold from './AdminFold';
 
 type PayPalInitial = {
   clientId: string;
@@ -119,7 +120,9 @@ export default function PayPalSettings({ initial }: { initial: PayPalInitial }) 
         <SecretInput
           value={clientSecret}
           onChange={(e) => setClientSecret(e.target.value)}
-          placeholder={initial.secretSet ? '留空 = 不修改' : 'EQnc...'}
+          onRevealed={setClientSecret}
+          revealField="paypal_client_secret"
+          placeholder={initial.secretSet ? '留空 = 不修改 · 点眼睛可看已保存的' : 'EQnc...'}
           autoComplete="off"
         />
       </label>
@@ -133,52 +136,43 @@ export default function PayPalSettings({ initial }: { initial: PayPalInitial }) 
         </button>
       </div>
 
-      <hr className="rule" style={{ margin: '18px 0 14px' }} />
+      <AdminFold title="① 怎么拿到 PayPal 凭据" hint="已核实的官方路径">
+        <ol className="adm-steps">
+          <li>打开 <code>https://developer.paypal.com/dashboard/</code>（这是真正建 App、拿 client_id/secret 的门户）。</li>
+          <li>
+            用<strong>中国站（贝宝北京）同一企业账号</strong>登录。
+            <span className="paypal-trap">⚠️ 登录时若弹出「通行密钥(Passkey)无法使用」报错——那是登录方式故障，不是账号问题。点「以其他方式登录 / 使用密码登录」，用账号邮箱+密码登即可。</span>
+          </li>
+          <li>进左侧 <code>Apps &amp; Credentials</code> → 顶部把环境切到 <strong>Live</strong>（真实收款）或保持 Sandbox（测试）→ 点 <code>Create App</code> → 取名（如 zhenhesheng-web）。</li>
+          <li>App 详情页复制 <code>Client ID</code> 和 <code>Secret</code>（点 Show；Secret 只显示一次，立即存好）。</li>
+          <li>
+            <strong>sandbox 与 live 是两套独立的凭据</strong>，互不通用。填哪种就选对应模式；上方模式（sandbox/live）要和这里建的 App 环境一致。
+          </li>
+        </ol>
+        <p className="adm-steps-note">
+          注意：<code>paypal.cn/portal/developer/*</code> 只是<strong>中国文档/视频门户</strong>，里面没有 App 管理入口（找不到 Apps &amp; Credentials 是正常的）。建 App、拿凭证只认 <code>developer.paypal.com</code>。
+        </p>
+      </AdminFold>
 
-      <p className="adm-oauth-hint" style={{ marginBottom: 8 }}>
-        <strong>① 怎么拿到 PayPal 凭据（已核实的官方路径）</strong>
-      </p>
-      <ol className="adm-steps">
-        <li>打开 <code>https://developer.paypal.com/dashboard/</code>（这是真正建 App、拿 client_id/secret 的门户）。</li>
-        <li>
-          用<strong>中国站（贝宝北京）同一企业账号</strong>登录。
-          <span className="paypal-trap">⚠️ 登录时若弹出「通行密钥(Passkey)无法使用」报错——那是登录方式故障，不是账号问题。点「以其他方式登录 / 使用密码登录」，用账号邮箱+密码登即可。</span>
-        </li>
-        <li>进左侧 <code>Apps &amp; Credentials</code> → 顶部把环境切到 <strong>Live</strong>（真实收款）或保持 Sandbox（测试）→ 点 <code>Create App</code> → 取名（如 zhenhesheng-web）。</li>
-        <li>App 详情页复制 <code>Client ID</code> 和 <code>Secret</code>（点 Show；Secret 只显示一次，立即存好）。</li>
-        <li>
-          <strong>sandbox 与 live 是两套独立的凭据</strong>，互不通用。填哪种就选对应模式；下方模式（sandbox/live）要和这里建的 App 环境一致。
-        </li>
-      </ol>
-      <p className="adm-steps-note">
-        注意：<code>paypal.cn/portal/developer/*</code> 只是<strong>中国文档/视频门户</strong>，里面没有 App 管理入口（找不到 Apps &amp; Credentials 是正常的）。建 App、拿凭证只认 <code>developer.paypal.com</code>。
-      </p>
+      <AdminFold title="② Webhook（强烈建议，自动落库兜底）" hint="防止关窗丢单">
+        <p className="adm-steps-note" style={{ marginBottom: 8 }}>
+          回跳页依赖买家浏览器跳回本站，断网 / 关窗会丢单。注册 PayPal Webhook 后由 PayPal 服务器主动通知我们落库，支付一旦完成订单必被创建，更可靠。
+        </p>
+        <ol className="adm-steps">
+          <li>在 <code>developer.paypal.com</code> → 你的 App（注意选 <strong>sandbox 还是 live 的 App</strong>）→ <code>Webhooks</code> → <code>Add Webhook</code></li>
+          <li>URL 填：<code>https://zhenhesheng.com/api/webhooks/paypal</code></li>
+          <li>事件勾选 <code>PAYMENT.CAPTURE.COMPLETED</code>（及 <code>CHECKOUT.ORDER.COMPLETED</code>）</li>
+          <li><strong>sandbox 与 live 各注册一次</strong>：切到 live 后，必须在这个 live App 里也注册一遍，否则真实收款不会触发兜底落库。</li>
+        </ol>
+      </AdminFold>
 
-      <hr className="rule" style={{ margin: '18px 0 14px' }} />
-
-      <p className="adm-oauth-hint" style={{ marginBottom: 8 }}>
-        <strong>② Webhook（强烈建议，自动落库兜底）</strong>
-      </p>
-      <p className="adm-steps-note" style={{ marginBottom: 8 }}>
-        回跳页依赖买家浏览器跳回本站，断网 / 关窗会丢单。注册 PayPal Webhook 后由 PayPal 服务器主动通知我们落库，支付一旦完成订单必被创建，更可靠。
-      </p>
-      <ol className="adm-steps">
-        <li>在 <code>developer.paypal.com</code> → 你的 App（注意选 <strong>sandbox 还是 live 的 App</strong>）→ <code>Webhooks</code> → <code>Add Webhook</code></li>
-        <li>URL 填：<code>https://zhenhesheng.com/api/webhooks/paypal</code></li>
-        <li>事件勾选 <code>PAYMENT.CAPTURE.COMPLETED</code>（及 <code>CHECKOUT.ORDER.COMPLETED</code>）</li>
-        <li><strong>sandbox 与 live 各注册一次</strong>：切到 live 后，必须在这个 live App 里也注册一遍，否则真实收款不会触发兜底落库。</li>
-      </ol>
-
-      <hr className="rule" style={{ margin: '18px 0 14px' }} />
-
-      <p className="adm-oauth-hint" style={{ marginBottom: 8 }}>
-        <strong>③ 测试 / 上线顺序建议</strong>
-      </p>
-      <ol className="adm-steps">
-        <li>先用 <code>sandbox</code> 模式 + 沙盒 <strong>Personal（个人买家）</strong>账号完整跑通「结账 → 付款 → 落库 → 订单状态」（别用 Business 商户号给自己付，会被 PayPal 拦）。</li>
-        <li>确认无误后，把模式切到 <code>live</code>、填 live 凭据、注册 live Webhook。</li>
-        <li><strong>先用一笔小额真钱</strong>测试到账 + 我们后台订单出现 <code>payment_provider=paypal</code>，再正式启用。</li>
-      </ol>
+      <AdminFold title="③ 测试 / 上线顺序建议" hint="先用小额真钱验一笔">
+        <ol className="adm-steps">
+          <li>先用 <code>sandbox</code> 模式 + 沙盒 <strong>Personal（个人买家）</strong>账号完整跑通「结账 → 付款 → 落库 → 订单状态」（别用 Business 商户号给自己付，会被 PayPal 拦）。</li>
+          <li>确认无误后，把模式切到 <code>live</code>、填 live 凭据、注册 live Webhook。</li>
+          <li><strong>先用一笔小额真钱</strong>测试到账 + 我们后台订单出现 <code>payment_provider=paypal</code>，再正式启用。</li>
+        </ol>
+      </AdminFold>
     </section>
   );
 }

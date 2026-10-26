@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/admin/client';
 import SecretInput from './SecretInput';
+import AdminFold from './AdminFold';
 
 type Supp = { email: string; reason: string; source: string | null; created_at: number };
 
@@ -147,7 +148,9 @@ export default function MailSettings({ initial }: { initial: Status }) {
             <SecretInput
               value={resendKey}
               onChange={(e) => setResendKey(e.target.value)}
-              placeholder={initial.ready ? '留空 = 不修改' : 're_…'}
+              onRevealed={setResendKey}
+              revealField="resend_api_key"
+              placeholder={initial.ready ? '留空 = 不修改 · 点眼睛可看已保存的' : 're_…'}
               autoComplete="off"
             />
           </label>
@@ -185,45 +188,49 @@ export default function MailSettings({ initial }: { initial: Status }) {
             </button>
           </div>
 
-          <hr className="rule" style={{ margin: '20px 0 14px' }} />
-
-          <h2 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>退信自动处理</h2>
-          <p className="adm-oauth-hint">
-            硬退信与「举报垃圾邮件」会<strong>自动</strong>加入退订名单，不用人工盯。这是保住域名声誉的关键——
-            把信反复投给不存在的邮箱，Gmail 会把整域判为垃圾源，连密码重置都进不了收件箱。
-          </p>
-          <div className="adm-oauth-uri">
-            <span>Resend 后台填这个端点</span>
-            <code>https://zhenhesheng.com/api/webhooks/resend</code>
-            <button
-              type="button"
-              onClick={() => navigator.clipboard?.writeText('https://zhenhesheng.com/api/webhooks/resend')}
-            >
-              复制
-            </button>
-          </div>
-          <p className="adm-oauth-hint">
-            事件勾选：<code>email.bounced</code>、<code>email.complained</code>（可选 <code>email.delivered</code>）。
-          </p>
-          <label className="adm-oauth-field">
-            <span>
-              Webhook 签名密钥 {initial.webhookSecretSet && <em>(已配置)</em>}
-            </span>
-            <SecretInput
-              value={webhookSecret}
-              onChange={(e) => setWebhookSecret(e.target.value)}
-              placeholder={initial.webhookSecretSet ? '留空 = 不修改' : 'whsec_…（Resend 建 webhook 后给出）'}
-              autoComplete="off"
-            />
-          </label>
-          <div className="adm-oauth-foot">
-            <button className="btn btn-outline" type="button" disabled={busy === 'save'} onClick={save}>
-              保存密钥
-            </button>
-            <span className={`adm-mail-badge${initial.webhookSecretSet ? ' ok' : ''}`}>
-              {initial.webhookSecretSet ? '已启用' : '未启用'}
-            </span>
-          </div>
+          <AdminFold
+            title="退信自动处理 · Webhook"
+            hint={initial.webhookSecretSet ? '已启用' : '未启用，建议开'}
+          >
+            <p className="adm-oauth-hint">
+              硬退信与「举报垃圾邮件」会<strong>自动</strong>加入退订名单，不用人工盯。这是保住域名声誉的关键——
+              把信反复投给不存在的邮箱，Gmail 会把整域判为垃圾源，连密码重置都进不了收件箱。
+            </p>
+            <div className="adm-oauth-uri">
+              <span>Resend 后台填这个端点</span>
+              <code>https://zhenhesheng.com/api/webhooks/resend</code>
+              <button
+                type="button"
+                onClick={() => navigator.clipboard?.writeText('https://zhenhesheng.com/api/webhooks/resend')}
+              >
+                复制
+              </button>
+            </div>
+            <p className="adm-oauth-hint">
+              事件勾选：<code>email.bounced</code>、<code>email.complained</code>（可选 <code>email.delivered</code>）。
+            </p>
+            <label className="adm-oauth-field">
+              <span>
+                Webhook 签名密钥 {initial.webhookSecretSet && <em>(已配置)</em>}
+              </span>
+              <SecretInput
+                value={webhookSecret}
+                onChange={(e) => setWebhookSecret(e.target.value)}
+                onRevealed={setWebhookSecret}
+                revealField="resend_webhook_secret"
+                placeholder={initial.webhookSecretSet ? '留空 = 不修改 · 点眼睛可看已保存的' : 'whsec_…（Resend 建 webhook 后给出）'}
+                autoComplete="off"
+              />
+            </label>
+            <div className="adm-oauth-foot">
+              <button className="btn btn-outline" type="button" disabled={busy === 'save'} onClick={save}>
+                保存密钥
+              </button>
+              <span className={`adm-mail-badge${initial.webhookSecretSet ? ' ok' : ''}`}>
+                {initial.webhookSecretSet ? '已启用' : '未启用'}
+              </span>
+            </div>
+          </AdminFold>
 
           <hr className="rule" style={{ margin: '20px 0 14px' }} />
 
@@ -261,56 +268,62 @@ export default function MailSettings({ initial }: { initial: Status }) {
 
         {/* 右：DNS 清单 */}
         <div>
-          <h2 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>DNSPod 需要加的记录</h2>
+          <h2 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>DNS 记录清单</h2>
           <p className="adm-oauth-hint" style={{ marginBottom: 12 }}>
-            照抄即可（值以服务商控制台显示的为准，Resend 后台会给出专属值）。
+            首次配域名才需要动，配好后可以不用再看。
           </p>
 
-          <table className="adm-dns-table">
-            <thead>
-              <tr>
-                <th>主机记录</th>
-                <th>类型</th>
-                <th>记录值</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><code>@</code></td>
-                <td>MX</td>
-                <td><code>mxbiz1.qq.com</code> 优先级 5</td>
-              </tr>
-              <tr>
-                <td><code>@</code></td>
-                <td>MX</td>
-                <td><code>mxbiz2.qq.com</code> 优先级 10</td>
-              </tr>
-              <tr>
-                <td><code>@</code></td>
-                <td>TXT</td>
-                <td><code>v=spf1 include:spf.mail.qq.com include:amazonses.com ~all</code></td>
-              </tr>
-              <tr>
-                <td><code>resend._domainkey</code></td>
-                <td>TXT</td>
-                <td>Resend 控制台复制（<code>p=MIGf…</code>）</td>
-              </tr>
-              <tr>
-                <td><code>news</code></td>
-                <td>CNAME</td>
-                <td>Resend 控制台复制（子域验证）</td>
-              </tr>
-              <tr>
-                <td><code>_dmarc</code></td>
-                <td>TXT</td>
-                <td><code>v=DMARC1; p=none; rua=mailto:hello@zhenhesheng.com</code></td>
-              </tr>
-            </tbody>
-          </table>
-          <p className="adm-steps-note" style={{ marginTop: 12 }}>
-            顺序很重要：<strong>先 MX</strong>（法律邮箱立刻能用）→ 再 SPF/DKIM → 最后 DMARC。
-            DMARC 先 <code>p=none</code> 观察 2–4 周，确认正常后再改 <code>quarantine</code>，否则可能把自己的信拦掉。
-          </p>
+          <AdminFold title="DNSPod 需要加的记录" hint="6 条 · 照抄即可">
+            <p className="adm-oauth-hint" style={{ marginBottom: 12 }}>
+              照抄即可（值以服务商控制台显示的为准，Resend 后台会给出专属值）。
+            </p>
+
+            <table className="adm-dns-table">
+              <thead>
+                <tr>
+                  <th>主机记录</th>
+                  <th>类型</th>
+                  <th>记录值</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>@</code></td>
+                  <td>MX</td>
+                  <td><code>mxbiz1.qq.com</code> 优先级 5</td>
+                </tr>
+                <tr>
+                  <td><code>@</code></td>
+                  <td>MX</td>
+                  <td><code>mxbiz2.qq.com</code> 优先级 10</td>
+                </tr>
+                <tr>
+                  <td><code>@</code></td>
+                  <td>TXT</td>
+                  <td><code>v=spf1 include:spf.mail.qq.com include:amazonses.com ~all</code></td>
+                </tr>
+                <tr>
+                  <td><code>resend._domainkey</code></td>
+                  <td>TXT</td>
+                  <td>Resend 控制台复制（<code>p=MIGf…</code>）</td>
+                </tr>
+                <tr>
+                  <td><code>news</code></td>
+                  <td>CNAME</td>
+                  <td>Resend 控制台复制（子域验证）</td>
+                </tr>
+                <tr>
+                  <td><code>_dmarc</code></td>
+                  <td>TXT</td>
+                  <td><code>v=DMARC1; p=none; rua=mailto:hello@zhenhesheng.com</code></td>
+                </tr>
+              </tbody>
+            </table>
+            <p className="adm-steps-note" style={{ marginTop: 12 }}>
+              顺序很重要：<strong>先 MX</strong>（法律邮箱立刻能用）→ 再 SPF/DKIM → 最后 DMARC。
+              DMARC 先 <code>p=none</code> 观察 2–4 周，确认正常后再改 <code>quarantine</code>，否则可能把自己的信拦掉。
+            </p>
+          </AdminFold>
         </div>
       </div>
 
