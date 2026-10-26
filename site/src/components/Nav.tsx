@@ -42,7 +42,7 @@ export function Nav({ strings }: { strings: NavStrings }) {
       <nav className="nav">
         <div className="wrap nav-in">
           <Link className="brand" href="/">
-            <span className="brand-mark">☯</span>
+            <img className="brand-logo" src="/favicon.ico" alt="真和盛" width={30} height={30} />
             <span>
               <span className="brand-name">ZHEN HE SHENG</span>
               <span className="brand-sub">{strings.brandSub}</span>
