@@ -60,13 +60,23 @@ export default function SecretInput({
   const [loading, setLoading] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [fetched, setFetched] = useState(false);
+  // 没传 onChange（如登录页只传 name）时，自己维护内容。
+  // 否则 value={''} 且无 onChange，React 会当成只读受控输入 —— 敲键盘毫无反应。
+  const [internal, setInternal] = useState('');
+  const controlled = typeof onChange === 'function';
+  const current = controlled ? value : internal;
+
+  function handleChange(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    if (!controlled) setInternal(e.target.value);
+    onChange?.(e);
+  }
 
   async function toggle() {
     const next = !show;
     setShow(next);
     if (!next) return;
     // 框里已经有内容（自己输入的或之前取回来的）就不用再取
-    if (value || fetched || !revealField) return;
+    if (current || fetched || !revealField) return;
 
     setLoading(true);
     setNote(null);
@@ -83,8 +93,10 @@ export default function SecretInput({
       if (!res.ok) throw new Error(data?.error ?? '读取失败');
       setFetched(true); // 只有成功才记住，失败（如会话过期）下次还能重试
       const v = data?.value ?? '';
-      if (v) onRevealed?.(v);
-      else setNote('未保存过任何密钥');
+      if (v) {
+        if (!controlled) setInternal(v);
+        onRevealed?.(v);
+      } else setNote('未保存过任何密钥');
     } catch {
       setNote('读取失败，请重新登录后再试');
     } finally {
@@ -145,8 +157,8 @@ export default function SecretInput({
         <div style={{ position: 'relative' }}>
           <textarea
             name={name}
-            value={value}
-            onChange={onChange}
+            value={current}
+            onChange={handleChange}
             placeholder={ph}
             required={required}
             disabled={disabled}
@@ -154,7 +166,7 @@ export default function SecretInput({
             spellCheck={spellCheck}
             style={{ width: '100%', paddingRight: 32, boxSizing: 'border-box' }}
           />
-          {!show && value ? (
+          {!show && current ? (
             <div
               aria-hidden="true"
               style={{
@@ -175,7 +187,7 @@ export default function SecretInput({
                 boxSizing: 'border-box',
               }}
             >
-              {mask(value)}
+              {mask(current)}
             </div>
           ) : null}
         </div>
@@ -183,8 +195,8 @@ export default function SecretInput({
         <input
           type={show ? 'text' : 'password'}
           name={name}
-          value={value}
-          onChange={onChange}
+          value={current}
+          onChange={handleChange}
           placeholder={ph}
           required={required}
           autoComplete={autoComplete}
